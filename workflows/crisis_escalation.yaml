@@ -1,0 +1,30 @@
+---
+# Cloud Workflows definition (YAML)
+# All expressions wrapped in single quotes; steps as a list; no unsupported functions.
+main:
+  params: [input]
+  steps:
+    - validate_inputs:
+        assign:
+          - actor: '${input.actor}'
+          - score: '${input.score}'
+          - esc_url: >-
+              ${sys.get_env('ESCALATION_WEBHOOK_URL')}
+    - check_threshold:
+        switch:
+          - condition: '${score > 0.85}'
+            steps:
+              - escalate:
+                  call: http.post
+                  args:
+                    url: ${esc_url}
+                    body:
+                      trace_id: '${input.trace_id}'
+                      timestamp: '${sys.now()}'
+                      event: 'crisis_escalation'
+                      decision: 'triggered'
+                      ledger_entry: 'score_gate'
+              - return_triggered:
+                  return: {'status': 'triggered'}
+    - return_ok:
+        return: {'status': 'clear'}
