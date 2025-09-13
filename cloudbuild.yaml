@@ -1,0 +1,66 @@
+---
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _ARTIFACT_BUCKET: 'ivory-mountain-470414-k1_cloudbuild'
+
+steps:
+  - id: 'debug'
+    name: 'ubuntu'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== cloudbuild.yaml ==="
+        cat cloudbuild.yaml || echo "cloudbuild.yaml not found"
+
+  - id: 'terraform-init'
+    name: 'hashicorp/terraform:1.6.0'
+    args: ['init', '-upgrade', '-input=false']
+
+  - id: 'terraform-plan'
+    name: 'hashicorp/terraform:1.6.0'
+    args: ['plan', '-out=tfplan']
+
+  - id: 'terraform-show'
+    name: 'hashicorp/terraform:1.6.0'
+    args: ['show', '-json', 'tfplan']
+
+  - id: 'debug-workflows'
+    name: 'ubuntu'
+    args: ['ls', '-l', 'workflows']
+
+  - id: 'debug-workflow-content'
+    name: 'ubuntu'
+    args: ['cat', 'workflows/crisis_escalation.yaml']
+
+  - id: 'conftest-yaml'
+    name: 'openpolicyagent/conftest:v0.53.0'
+    args: ['test', '--policy', 'policy', '--all-namespaces', 'workflows']
+
+  - id: 'emit-telemetry'
+    name: 'python:3.9-slim'
+    entrypoint: 'python3'
+    args:
+      - -c
+      - |
+        import uuid, datetime, json
+        data = {
+            "trace_id": str(uuid.uuid4()),
+            "timestamp": datetime.datetime.utcnow().strftime(
+                '%Y-%m-%dT%H:%M:%SZ'
+            ),
+            "event": "rulebook_checks",
+            "decision": "passed",
+            "ledger_entry": "terraform_plan,conftest_yaml"
+        }
+        with open(
+            'modules/jallybean_compliance/rulebook_output.json', 'a'
+        ) as f:
+            f.write(json.dumps(data) + '\n')
+
+artifacts:
+  objects:
+    location: 'gs://${_ARTIFACT_BUCKET}/rulebook-logs/'
+    paths: ['modules/jallybean_compliance/rulebook_output.json']
