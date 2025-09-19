@@ -45,16 +45,37 @@ for bone, expected_data in expected.get('pose_quaternion', {}).items():
             }
         })
 
+animation_expected = expected.get("animation")
+animation_actual = actual.get("animation")
+alignment_score = 1.0 if animation_actual == animation_expected else 0.0
+
+animation_mismatch = {
+  "timestamp": datetime.utcnow().isoformat() + "Z",
+  "clause_id": clause_id,
+  "persona": persona,
+  "event": "animation_misalignment",
+  "frame_id": frame_id,
+  "details": {
+    "expected": animation_expected,
+    "actual": animation_actual,
+    "alignment_score": alignment_score
+  }
+} if animation_actual != animation_expected else None
+
+events = pose_deviations
+if animation_mismatch:
+    events.append(animation_mismatch)
+
 # Emit scoring metrics
 metrics = {
     "frame_id": frame_id,
     "clause_id": clause_id,
     "avatar_pose_confidence": actual["confidence"],
-    "animation_alignment_score": 1.0 if actual["animation"] == expected.get("animation") else 0.0,
+    "animation_alignment_score": alignment_score, # Use the calculated alignment_score
     "pose_match": len(pose_deviations) == 0,
-    "animation_match": actual["animation"] == expected.get("animation"),
+    "animation_match": animation_actual == animation_expected,
     "confidence_pass": actual["confidence"] >= expected.get("confidence_threshold", 0.9)
 }
 
 Path("score-bundle.json").write_text(json.dumps(metrics, indent=2))
-Path("pose-deviation-events.json").write_text(json.dumps(pose_deviations, indent=2))
+Path("pose-deviation-events.json").write_text(json.dumps(events, indent=2))

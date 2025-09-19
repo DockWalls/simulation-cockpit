@@ -10,6 +10,11 @@
     "animation_match": true,
     "confidence_pass": false
   },
+  "animation_misalignment": {
+    "expected": "nod-confirm",
+    "actual": "head-tilt",
+    "alignment_score": 0.42
+  },
   "deviations": [
     {
       "bone": "head",
