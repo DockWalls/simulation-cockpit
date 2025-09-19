@@ -1,61 +1,51 @@
-# simulation-cockpit
+# 🧭 Simulation Cockpit — Release v1.7.0
 
-This repository is dedicated to viewing and analyzing simulation outputs from the Jallybean governance system. It is strictly scoped for HUD overlays, telemetry scoring, replay fidelity, and evidence bundling.
+This repository contains the full simulation cockpit for clause execution, avatar fidelity scoring, and recovery telemetry. It includes:
 
-## Modules Included
-
-- `grafana/`: Viewer dashboards for commander and analyst roles
-- `telemetry/`: Loki, Promtail, and scoring logic
-- `evidence/`: HUD snapshots, replay bundles, and scoring pipelines
-
-## Usage
-
-```bash
-./start-viewer.sh
-```
-Governance Note
-This repo does not contain clause dispatch logic, Tekton triggers, or policy enforcement modules. All governance operations remain in jallybean-i-governance.
-
-Code
+- ✅ Clause selector panel
+- ✅ Avatar viewer with HUD overlays
+- ✅ Grafana dashboards for recovery and resilience
+- ✅ Tekton pipelines for clause retry
+- ✅ Evidence exports and simulation health reports
 
 ---
 
-## ✅ 2. Generate Viewer-Only Grafana Dashboard Manifest
+## 🔹 Live Interfaces
 
-```yaml
-apiVersion: 1
-datasources:
-  - name: Telemetry
-    type: loki
-    access: proxy
-    url: http://loki:3100
-    jsonData:
-      maxLines: 1000
-```
-Save as grafana/datasource-job.yaml This connects Grafana to Loki for replay and scoring logs
+| Component              | Description                                                  | URL |
+|------------------------|--------------------------------------------------------------|-----|
+| Clause Selector Panel  | Browse and launch clause viewers                             | [`/clause-selector`](https://simulation-cockpit.web.app/clause-selector) |
+| Avatar Viewer          | Visual playback of clause execution                          | [`/viewer`](https://simulation-cockpit.web.app/viewer) |
+| Clause Recovery Dashboard | Retry telemetry and recovery scoring                     | [Grafana](https://grafana.sim-cockpit.io/d/clause-recovery) |
+| Persona Resilience Dashboard | Benchmark persona recovery and fidelity             | [Grafana](https://grafana.sim-cockpit.io/d/persona-resilience) |
+| Simulation Health Dashboard | Clause-level fidelity summary                         | [Grafana](https://grafana.sim-cockpit.io/d/simulation-health) |
 
-✅ 3. Rig start-viewer.sh Script
-bash
-#!/bin/bash
+---
 
-echo "🚀 Launching Simulation Viewer Cockpit..."
+## 🔹 Evidence Artifacts
 
-# Start Loki
-docker run -d --name loki -p 3100:3100 grafana/loki:latest
+- [`clause-manifest.yaml`](dispatch/clause-manifest.yaml)
+- [`clause-fidelity-report.json`](evidence/export/clause-fidelity-report.json)
+- [`simulation-health-report.json`](evidence/export/simulation-health-report.json)
+- [`onboarding-guide.md`](docs/onboarding-guide.md)
 
-# Start Promtail
-docker run -d --name promtail -v "$(pwd)/telemetry/promtail:/etc/promtail" grafana/promtail:latest
+---
 
-# Start Grafana
-docker run -d --name grafana -p 3000:3000 \
-  -v "$(pwd)/grafana:/var/lib/grafana/dashboards" \
-  -e "GF_PATHS_PROVISIONING=/etc/grafana/provisioning" \
-  grafana/grafana:latest
+## 🔹 CI/CD Pipelines
 
-echo "✅ Viewer cockpit is live at http://localhost:3000"
-Save as start-viewer.sh Make executable:
+- [`clause-retry-pipeline.yaml`](ci_cd/tekton/clause-retry-pipeline.yaml)
+- Tekton tasks for clause validation, replay, and logging
 
-bash
-chmod +x start-viewer.sh
+---
 
-```
+## 🔹 Deployment
+
+This cockpit is deployed via Firebase Hosting and Grafana Cloud. Viewer components are built with React and Three.js. Dashboards are provisioned via JSON and YAML manifests.
+
+---
+
+## 🔹 License & Governance
+
+This simulation cockpit is governed by sovereign-grade telemetry protocols and audit-grade evidence standards. All clause executions are traceable, recoverable, and exportable.
+
+---
