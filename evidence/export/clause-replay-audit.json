@@ -1,0 +1,29 @@
+{
+  "audit_id": "audit-telemetry-042-2025-09-18T1914Z",
+  "clause_id": "telemetry-042",
+  "persona": "commander-alpha",
+  "region": "us-west-2",
+  "timestamp": "2025-09-18T19:14:00Z",
+  "summary": {
+    "status": "pass",
+    "score": 0.92,
+    "fidelity": 0.87,
+    "alignment": 0.89,
+    "confidence": 0.94
+  },
+  "telemetry": {
+    "latency_ms": 142,
+    "frame_drop_rate": 0.003,
+    "dispatch_success_rate": 0.998
+  },
+  "hud_overlay": {
+    "pose": "directive",
+    "animation": "nod-confirm",
+    "notes": "Minor misalignment in directive pose at frame 17"
+  },
+  "evidence_bundle": {
+    "hud_frame": "hud-2025-09-18T1901Z",
+    "score_bundle": "score-2025-09-18T1858Z",
+    "export_path": "/evidence/export/hud-snapshot.csv"
+  }
+}
