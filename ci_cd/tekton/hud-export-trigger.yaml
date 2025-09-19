@@ -1,0 +1,43 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: hud-export-template
+spec:
+  params:
+    - name: clause_id
+    - name: persona
+    - name: region
+  resourcetemplates:
+    - apiVersion: batch/v1
+      kind: Job
+      metadata:
+        generateName: hud-export-
+      spec:
+        template:
+          spec:
+            containers:
+              - name: exporter
+                image: ghcr.io/jallybean/hud-exporter:latest
+                command: ["python", "export.py"]
+                args:
+                  - "--input"
+                  - "/evidence/hud"
+                  - "--output"
+                  - "/evidence/export"
+                  - "--format"
+                  - "csv"
+                env:
+                  - name: CLAUSE_ID
+                    value: "$(params.clause_id)"
+                  - name: PERSONA
+                    value: "$(params.persona)"
+                  - name: REGION
+                    value: "$(params.region)"
+                volumeMounts:
+                  - name: evidence-volume
+                    mountPath: /evidence
+            restartPolicy: Never
+            volumes:
+              - name: evidence-volume
+                persistentVolumeClaim:
+                  claimName: evidence-pvc
