@@ -1,0 +1,163 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "loki",
+      "name": "Loki",
+      "version": "1.0.0"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "enable": true,
+        "expr": "{clause=\"news.ingest\"}",
+        "hide": false,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Clause Triggers",
+        "type": "dashboard"
+      },
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "enable": true,
+        "expr": "{clause=\"evidence.bundle\"}",
+        "hide": false,
+        "iconColor": "rgba(255, 96, 96, 1)",
+        "name": "Evidence Bundles",
+        "type": "dashboard"
+      },
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "enable": true,
+        "expr": "{clause=\"policy.violation\"}",
+        "hide": false,
+        "iconColor": "rgba(255, 0, 0, 1)",
+        "name": "Policy Violations",
+        "type": "dashboard"
+      },
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "enable": true,
+        "expr": "{clause=~\"replay.start|replay.complete\"}",
+        "hide": false,
+        "iconColor": "rgba(0, 255, 0, 1)",
+        "name": "Replay Events",
+        "type": "dashboard"
+      },
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "enable": true,
+        "expr": "{clause=\"external.dispatch\"}",
+        "hide": false,
+        "iconColor": "rgba(255, 165, 0, 1)",
+        "name": "External Dispatches",
+        "type": "dashboard"
+      },
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "enable": true,
+        "expr": "{clause=\"integrity.fail\"}",
+        "hide": false,
+        "iconColor": "rgba(128, 0, 128, 1)",
+        "name": "Integrity Failures",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 14,
+      "title": "Integrity Score",
+      "type": "stat",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({clause=\"integrity.pass\"}[$__interval])) / (sum(count_over_time({clause=\"integrity.pass\"}[$__interval])) + sum(count_over_time({clause=\"integrity.fail\"}[$__interval]))) * 100",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 37,
+  "style": "dark",
+  "tags": ["analyst"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "definition": "label_values(region)",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "region",
+        "options": [],
+        "query": "label_values(region)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Analyst Dashboard",
+  "uid": "analyst-dashboard",
+  "version": 6,
+  "weekStart": ""
+}

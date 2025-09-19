@@ -1,0 +1,16 @@
+release_id: cockpit-v1.7.0
+timestamp: 2025-09-18T20:44:00Z
+region: us-west-2
+entrypoints:
+  clause_selector: https://simulation-cockpit.web.app/clause-selector
+  viewer: https://simulation-cockpit.web.app/viewer
+  dashboards:
+    clause_recovery: https://grafana.sim-cockpit.io/d/clause-recovery
+    persona_resilience: https://grafana.sim-cockpit.io/d/persona-resilience
+    simulation_health: https://grafana.sim-cockpit.io/d/simulation-health
+evidence_bundle:
+  manifest: https://storage.googleapis.com/sim-cockpit-data/clause-manifest.yaml
+  health_report: https://storage.googleapis.com/sim-cockpit-data/simulation-health-report.json
+  fidelity_reports: https://storage.googleapis.com/sim-cockpit-data/fidelity-reports/
+documentation:
+  onboarding_guide: https://storage.googleapis.com/sim-cockpit-data/docs/onboarding-guide.md

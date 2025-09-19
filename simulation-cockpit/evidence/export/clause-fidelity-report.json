@@ -1,0 +1,46 @@
+{
+  "report_id": "fidelity-telemetry-042-2025-09-18T1956Z",
+  "clause_id": "telemetry-042",
+  "persona": "commander-alpha",
+  "region": "us-west-2",
+  "timestamp": "2025-09-18T19:56:00Z",
+  "summary": {
+    "status": "deviation",
+    "pose_match": false,
+    "animation_match": true,
+    "confidence_pass": false
+  },
+  "animation_misalignment": {
+    "expected": "nod-confirm",
+    "actual": "head-tilt",
+    "alignment_score": 0.42
+  },
+  "deviations": [
+    {
+      "bone": "head",
+      "angle_delta": 14.2,
+      "threshold": 10.0,
+      "frame_id": "hud-2025-09-18T1953Z"
+    },
+    {
+      "bone": "neck",
+      "angle_delta": 11.7,
+      "threshold": 10.0,
+      "frame_id": "hud-2025-09-18T1953Z"
+    }
+  ],
+  "animation": {
+    "expected": "nod-confirm",
+    "actual": "nod-confirm",
+    "alignment_score": 0.89
+  },
+  "confidence": {
+    "actual": 0.84,
+    "threshold": 0.90
+  },
+  "evidence_bundle": {
+    "hud_frame": "hud-2025-09-18T1953Z",
+    "score_bundle": "score-2025-09-18T1954Z",
+    "deviation_log": "pose-deviation-events.json"
+  }
+}

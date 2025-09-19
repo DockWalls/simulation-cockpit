@@ -1,0 +1,28 @@
+apiVersion: jallybean.io/v1
+kind: ClauseReplayManifest
+metadata:
+  name: clause-replay-telemetry-042
+  labels:
+    clause: telemetry-042
+    persona: commander-alpha
+    region: us-west-2
+spec:
+  clause_id: telemetry-042
+  persona: commander-alpha
+  region: us-west-2
+  replay_conditions:
+    - type: latency
+      threshold_ms: 150
+    - type: fidelity
+      minimum_score: 0.85
+    - type: avatar_pose
+      confidence_threshold: 0.90
+  hud_overlay:
+    pose: directive
+    animation: nod-confirm
+    alignment_score: 0.89
+  evidence_bundle:
+    output_path: /evidence/replay/clause-telemetry-042
+    format: json
+    include_score: true
+    include_hud: true

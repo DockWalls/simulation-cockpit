@@ -1,0 +1,25 @@
+{
+  "frame_id": "hud-2025-09-18T1901Z",
+  "clause_id": "clause-telemetry-042",
+  "persona": "commander-alpha",
+  "region": "us-west-2",
+  "timestamp": "2025-09-18T19:01:00Z",
+  "hud_overlay": {
+    "status": "active",
+    "score": 0.92,
+    "fidelity": 0.87,
+    "alignment": 0.89,
+    "avatar": {
+      "name": "commander-alpha",
+      "pose": "directive",
+      "animation": "nod-confirm",
+      "confidence": 0.94
+    },
+    "telemetry": {
+      "latency_ms": 142,
+      "frame_drop_rate": 0.003,
+      "dispatch_success_rate": 0.998
+    },
+    "notes": "HUD rendered successfully. Minor misalignment in directive pose at frame 17."
+  }
+}

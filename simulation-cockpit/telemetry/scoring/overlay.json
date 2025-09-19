@@ -1,0 +1,74 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "scoring-overlay",
+    "title": "Clause Scoring Overlay",
+    "tags": ["simulation", "telemetry", "scoring"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "30s",
+    "annotations": {
+      "list": [
+        {
+          "name": "Pose Deviations",
+          "datasource": "Loki",
+          "enable": true,
+          "expr": "{event=\"pose_deviation\"}",
+          "iconColor": "red",
+          "lineColor": "rgba(255,0,0,0.5)",
+          "textFormat": "{{clause_id}}: {{details.bone}} Δ{{details.angle_delta}}°"
+        }
+      ]
+    },
+    "panels": [
+      {
+        "type": "graph",
+        "title": "Clause Score Over Time",
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "clause_score{persona=~".*"}",
+            "legendFormat": "{{persona}}",
+            "refId": "A"
+          }
+        ],
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2,
+        "points": true,
+        "tooltip": { "shared": true, "sort": 0, "value_type": "individual" }
+      },
+      {
+        "type": "stat",
+        "title": "Replay Fidelity",
+        "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "avg(replay_fidelity)",
+            "refId": "B"
+          }
+        ],
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      {
+        "type": "table",
+        "title": "Clause Score Breakdown",
+        "gridPos": { "x": 0, "y": 8, "w": 18, "h": 6 },
+        "targets": [
+          {
+            "expr": "clause_score",
+            "refId": "C"
+          }
+        ],
+        "columns": [
+          { "text": "Clause", "value": "clause" },
+          { "text": "Persona", "value": "persona" },
+          { "text": "Score", "value": "value" }
+        ]
+      }
+    ]
+  }
+}

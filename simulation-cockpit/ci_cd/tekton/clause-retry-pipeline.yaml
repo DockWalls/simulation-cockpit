@@ -1,0 +1,42 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: clause-retry-pipeline
+spec:
+  params:
+    - name: clause_id
+    - name: persona
+    - name: region
+    - name: retry_reason
+  tasks:
+    - name: validate-failure
+      image: ghcr.io/jallybean/fidelity-checker:latest
+      script: |
+        python check_fidelity.py \
+          --clause $(params.clause_id) \
+          --persona $(params.persona) \
+          --region $(params.region)
+      results:
+        - name: should_retry
+    - name: replay-clause
+      when:
+        - input: $(tasks.validate-failure.results.should_retry)
+          operator: in
+          values: ["true"]
+      taskRef:
+        name: clause-replay-task
+      params:
+        - name: clause_id
+          value: $(params.clause_id)
+        - name: persona
+          value: $(params.persona)
+        - name: region
+          value: $(params.region)
+    - name: log-retry
+      when:
+        - input: $(tasks.validate-failure.results.should_retry)
+          operator: in
+          values: ["true"]
+      image: ghcr.io/jallybean/retry-logger:latest
+      script: |
+        echo "Retrying clause $(params.clause_id) due to $(params.retry_reason)"

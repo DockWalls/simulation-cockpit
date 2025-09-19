@@ -1,0 +1,52 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: clause-replay-pipeline
+  namespace: simulation
+spec:
+  params:
+    - name: clause_id
+    - name: persona
+    - name: region
+  tasks:
+    - name: replay-bundler
+      taskSpec:
+        steps:
+          - name: bundle
+            image: ghcr.io/jallybean/replay-bundler:latest
+            script: |
+              python bundle.py \
+                --input /evidence/replay \
+                --output /evidence/hud \
+                --manifest /evidence/replay/clause-replay-manifest.yaml
+            volumeMounts:
+              - name: evidence-volume
+                mountPath: /evidence
+        volumes:
+          - name: evidence-volume
+            persistentVolumeClaim:
+              claimName: evidence-pvc
+
+    - name: animation-score
+      taskRef:
+        name: animation-score-task
+      runAfter: [replay-bundler]
+
+    - name: hud-export
+      runAfter: [scoring-loop]
+      taskSpec:
+        steps:
+          - name: export
+            image: ghcr.io/jallybean/hud-exporter:latest
+            script: |
+              python export.py \
+                --input /evidence/hud \
+                --output /evidence/export \
+                --format csv
+            volumeMounts:
+              - name: evidence-volume
+                mountPath: /evidence
+        volumes:
+          - name: evidence-volume
+            persistentVolumeClaim:
+              claimName: evidence-pvc

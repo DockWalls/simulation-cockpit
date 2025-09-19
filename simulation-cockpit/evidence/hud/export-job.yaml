@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hud-exporter
+  namespace: evidence
+  labels:
+    app: hud-export
+spec:
+  template:
+    spec:
+      containers:
+        - name: exporter
+          image: ghcr.io/jallybean/hud-exporter:latest
+          command: ["python", "export.py"]
+          args:
+            - "--input"
+            - "/evidence/hud"
+            - "--output"
+            - "/evidence/export"
+            - "--format"
+            - "csv"
+          volumeMounts:
+            - name: evidence-volume
+              mountPath: /evidence
+      restartPolicy: Never
+      volumes:
+        - name: evidence-volume
+          persistentVolumeClaim:
+            claimName: evidence-pvc
+  backoffLimit: 3

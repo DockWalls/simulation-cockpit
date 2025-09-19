@@ -1,0 +1,16 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: clause-replay-run-telemetry-042
+  namespace: simulation
+spec:
+  pipelineRef:
+    name: clause-replay-pipeline
+  params:
+    - name: clause_id
+      value: telemetry-042
+    - name: persona
+      value: commander-alpha
+    - name: region
+      value: us-west-2
+  timeout: "10m"

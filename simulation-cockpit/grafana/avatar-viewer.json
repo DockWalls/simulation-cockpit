@@ -1,0 +1,105 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "avatar-viewer",
+    "title": "Clause-to-Avatar Viewer",
+    "tags": ["simulation", "avatar", "hud"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "30s",
+    "panels": [
+      {
+        "type": "table",
+        "title": "Clause Dispatch → Avatar Mapping",
+        "gridPos": { "x": 0, "y": 0, "w": 18, "h": 6 },
+        "targets": [
+          {
+            "expr": "clause_avatar_map",
+            "refId": "A"
+          }
+        ],
+        "columns": [
+          { "text": "Clause", "value": "clause_id" },
+          { "text": "Persona", "value": "persona" },
+          { "text": "Pose", "value": "pose" },
+          { "text": "Animation", "value": "animation" },
+          { "text": "Confidence", "value": "confidence" }
+        ]
+      },
+      {
+        "type": "stat",
+        "title": "Pose Confidence",
+        "gridPos": { "x": 0, "y": 6, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "avg(avatar_pose_confidence)",
+            "refId": "B"
+          }
+        ],
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      {
+        "type": "stat",
+        "title": "HUD Alignment Score",
+        "gridPos": { "x": 6, "y": 6, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "avg(hud_alignment)",
+            "refId": "C"
+          }
+        ],
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      {
+        "type": "stat",
+        "title": "Pose Confidence",
+        "gridPos": { "x": 0, "y": 10, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "avg(avatar_pose_confidence)",
+            "refId": "D"
+          }
+        ],
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      {
+        "type": "gauge",
+        "title": "Animation Alignment",
+        "gridPos": { "x": 6, "y": 10, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "avg(animation_alignment_score)",
+            "refId": "E"
+          }
+        ],
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center"
+      },
+      {
+        "type": "table",
+        "title": "Pose & Animation Match",
+        "gridPos": { "x": 0, "y": 14, "w": 18, "h": 6 },
+        "targets": [
+          {
+            "expr": "clause_id",
+            "refId": "F"
+          }
+        ],
+        "columns": [
+          { "text": "Clause", "value": "clause_id" },
+          { "text": "Pose Match", "value": "pose_match" },
+          { "text": "Animation Match", "value": "animation_match" },
+          { "text": "Confidence Pass", "value": "confidence_pass" }
+        ]
+      }
+    ]
+  }
+}

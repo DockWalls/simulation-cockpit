@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Simulation Cockpit</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: sans-serif; margin: 2rem; background: #f9f9f9; }
+    h1 { color: #333; }
+    .panel { margin-bottom: 2rem; padding: 1rem; background: #fff; border-radius: 8px; box-shadow: 0 0 4px rgba(0,0,0,0.1); }
+    a { color: #0077cc; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <h1>🧭 Simulation Cockpit</h1>
+
+  <div class="panel">
+    <h2>🎯 Clause Selector</h2>
+    <p>Browse and launch clause viewers with HUD overlays and resilience scoring.</p>
+    <a href="/clause-selector">Open Clause Selector</a>
+  </div>
+
+  <div class="panel">
+    <h2>🕹️ Avatar Viewer</h2>
+    <p>Visual playback of clause execution with pose deviation alerts.</p>
+    <a href="/viewer">Launch Viewer</a>
+  </div>
+
+  <div class="panel">
+    <h2>📊 Dashboards</h2>
+    <ul>
+      <li><a href="https://grafana.sim-cockpit.io/d/clause-recovery">Clause Recovery</a></li>
+      <li><a href="https://grafana.sim-cockpit.io/d/persona-resilience">Persona Resilience</a></li>
+      <li><a href="https://grafana.sim-cockpit.io/d/simulation-health">Simulation Health</a></li>
+    </ul>
+  </div>
+
+  <div class="panel">
+    <h2>📁 Documentation</h2>
+    <p>Read the onboarding guide for analysts and auditors.</p>
+    <a href="https://storage.googleapis.com/sim-cockpit-data/docs/onboarding-guide.md">View Onboarding Guide</a>
+  </div>
+</body>
+</html>

@@ -1,0 +1,21 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: animation-score-task
+  namespace: simulation
+spec:
+  steps:
+    - name: score-animation
+      image: ghcr.io/dockwalls/clause-scorer:animation
+      script: |
+        python score.py \
+          --input /evidence/hud-frame.json \
+          --pose-map /evidence/clause-pose-map.yaml \
+          --output /evidence/score/score-bundle.json
+      volumeMounts:
+        - name: evidence-volume
+          mountPath: /evidence
+  volumes:
+    - name: evidence-volume
+      persistentVolumeClaim:
+        claimName: evidence-pvc

@@ -1,0 +1,58 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: emit-synthetic-log
+  namespace: jallybean-telemetry
+spec:
+  description: >
+    Emit a single JSON log line to Loki Gateway with X-Scope-OrgId for multi-tenancy.
+  params:
+    - name: lokiURL
+      type: string
+      default: http://loki-gateway.jallybean-telemetry.svc.cluster.local/loki/api/v1/push
+    - name: tenant
+      type: string
+      default: foo
+    - name: clause
+      type: string
+      default: hud.render
+    - name: severity
+      type: string
+      default: info
+    - name: message
+      type: string
+      default: HUD snapshot rendered successfully
+  steps:
+    - name: push
+      image: curlimages/curl:8.7.1
+      script: |
+        #!/bin/sh
+        set -eu
+        TS=$(date +%s%N)
+
+        cat >/tmp/payload.json <<JSON
+        {
+          "streams": [
+            {
+              "stream": {
+                "job": "test",
+                "app": "synthetic",
+                "clause": "$(params.clause)",
+                "severity": "$(params.severity)"
+              },
+              "values": [
+                ["${TS}", "$(params.message)"]
+              ]
+            }
+          ]
+        }
+        JSON
+
+        echo "INFO: Pushing to $(params.lokiURL) as tenant $(params.tenant)"
+        curl -sS -f \
+          -H "Content-Type: application/json" \
+          -H "X-Scope-OrgId: $(params.tenant)" \
+          --data-binary @/tmp/payload.json \
+          -X POST "$(params.lokiURL)"
+        echo
+        echo "OK: Push completed"

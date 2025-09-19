@@ -1,0 +1,17 @@
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: emit-synthetic-log-run-2
+  namespace: jallybean-telemetry
+spec:
+  taskRef:
+    name: emit-synthetic-log
+  params:
+    - name: tenant
+      value: foo
+    - name: clause
+      value: hud.render
+    - name: severity
+      value: info
+    - name: message
+      value: "hello-from-synthetic-task-2"
