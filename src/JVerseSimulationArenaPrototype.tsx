@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const REGION_COORD: Record<string, [number, number]> = {
   TPE: [121.73, 25.15],
