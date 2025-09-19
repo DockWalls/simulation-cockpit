@@ -1,0 +1,24 @@
+apiVersion: jallybean.io/v1
+kind: ClauseReplayMatrix
+metadata:
+  name: replay-matrix-2025-09-18
+spec:
+  clauses:
+    - clause_id: telemetry-042
+      persona: commander-alpha
+      region: us-west-2
+    - clause_id: ethics-017
+      persona: analyst-beta
+      region: us-east-1
+    - clause_id: dispatch-309
+      persona: operator-gamma
+      region: eu-central-1
+  replay_conditions:
+    latency_threshold_ms: 150
+    fidelity_minimum_score: 0.85
+    avatar_confidence_threshold: 0.90
+  output:
+    bundle_path: /evidence/replay/matrix-bundles
+    include_score: true
+    include_hud: true
+    export_format: csv
