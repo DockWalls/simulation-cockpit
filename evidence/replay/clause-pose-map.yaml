@@ -1,0 +1,21 @@
+apiVersion: jallybean.io/v1
+kind: ClausePoseMap
+metadata:
+  name: clause-pose-map-2025-09-18
+spec:
+  mappings:
+    - clause_id: telemetry-042
+      persona: commander-alpha
+      pose: directive
+      animation: nod-confirm
+      confidence_threshold: 0.90
+    - clause_id: ethics-017
+      persona: analyst-beta
+      pose: reflective
+      animation: head-tilt
+      confidence_threshold: 0.88
+    - clause_id: dispatch-309
+      persona: operator-gamma
+      pose: alert
+      animation: scan-left-right
+      confidence_threshold: 0.92
