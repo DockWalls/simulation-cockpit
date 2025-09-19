@@ -1,0 +1,226 @@
+{
+  "__inputs": [],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "loki",
+      "name": "Loki",
+      "version": "1.0.0"
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "enable": true,
+        "expr": "{clause=\"news.ingest\"}",
+        "hide": false,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Clause Triggers",
+        "type": "dashboard"
+      },
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "enable": true,
+        "expr": "{clause=\"evidence.bundle\"}",
+        "hide": false,
+        "iconColor": "rgba(255, 96, 96, 1)",
+        "name": "Evidence Bundles",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "links": [
+    {
+      "title": "Analyst Dashboard",
+      "url": "/d/analyst-dashboard",
+      "asDropdown": true
+    },
+    {
+      "title": "Commander Dashboard",
+      "url": "/d/commander-dashboard",
+      "asDropdown": true
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "id": 1,
+      "title": "HUD Image Viewer",
+      "type": "text",
+      "description": "Displays the latest HUD snapshot in MinIO.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "content": "<img src=\"http://minio:9000/evidence/evidence/${region}/hud-latest.svg\" width=\"100%\">",
+        "mode": "html"
+      }
+    },
+    {
+      "id": 2,
+      "title": "Clause Execution Timeline",
+      "type": "logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "{clause=\"hud.render\", tenant=\"$persona\"}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Severity Heatmap",
+      "type": "heatmap",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "sum by (level) (count_over_time({clause=\"news.ingest\", tenant=\"$persona\"} [$__interval]))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Worldmap",
+      "type": "geomap",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "targets": [
+        {
+          "expr": "count by (region) (count_over_time({clause=\"news.ingest\", tenant=\"$persona\"} [$__interval]))",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Evidence Bundles",
+      "type": "logs",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "targets": [
+        {
+          "expr": "{clause=\"evidence.bundle\", tenant=\"$persona\"}",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 37,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "definition": "label_values(region)",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "region",
+        "options": [],
+        "query": "label_values(region)",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "observer",
+          "value": "observer"
+        },
+        "hide": 0,
+        "name": "persona",
+        "options": [
+          {
+            "text": "observer",
+            "value": "observer"
+          },
+          {
+            "text": "analyst",
+            "value": "analyst"
+          },
+          {
+            "text": "commander",
+            "value": "commander"
+          }
+        ],
+        "query": "observer,analyst,commander",
+        "skipUrlSync": false,
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Clause Alert Dashboard",
+  "uid": "clause-alert-dashboard",
+  "version": 4,
+  "weekStart": ""
+}

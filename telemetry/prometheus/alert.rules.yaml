@@ -1,0 +1,33 @@
+groups:
+- name: clause-policy-violations
+  rules:
+  - alert: RepeatedPolicyViolations
+    expr: sum(rate({clause="policy.violation"}[5m])) by (tenant) > 5
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Repeated policy violations for tenant {{ $labels.tenant }}"
+      description: "Tenant {{ $labels.tenant }} has been repeatedly violating policies."
+
+- name: external-dispatch-alerts
+  rules:
+  - alert: FailedExternalDispatch
+    expr: sum(rate({clause="external.dispatch", status="failed"}[5m])) > 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Failed external dispatch to {{ $labels.target_system }}"
+      description: "Failed to dispatch to external system {{ $labels.target_system }}."
+
+- name: integrity-alerts
+  rules:
+  - alert: IntegrityFailure
+    expr: sum(rate({clause="integrity.fail"}[5m])) > 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Integrity failure detected for clause {{ $labels.clause_id }}"
+      description: "Integrity check failed for clause {{ $labels.clause_id }}."

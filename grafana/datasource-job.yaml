@@ -1,0 +1,75 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: grafana-datasource-job
+  namespace: jallybean-telemetry
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: setup
+          image: alpine:3.20
+          command: ["/bin/sh", "-lc"]
+          args:
+            - |
+              set -euo pipefail
+              apk add --no-cache curl jq >/dev/null
+
+              : "${GF_URL:=http://jallybean-grafana}"
+              : "${DS_NAME:=loki-tenant-foo}"
+
+              cat >/tmp/ds.json <<JSON
+              {
+                "name": "${DS_NAME}",
+                "type": "loki",
+                "access": "proxy",
+                "url": "http://loki-gateway.jallybean-telemetry.svc.cluster.local",
+                "isDefault": false,
+                "jsonData": {
+                  "httpHeaderName1": "X-Scope-OrgId"
+                },
+                "secureJsonData": {
+                  "httpHeaderValue1": "foo"
+                }
+              }
+              JSON
+
+              # Check existence
+              set +e
+              http_code=$(curl -sS -w "%{http_code}" -o /tmp/get.json \
+                -u "$GF_USER:$GF_PASS" \
+                "$GF_URL/api/datasources/name/$DS_NAME")
+              set -e
+
+              if [ "$http_code" = "200" ]; then
+                id=$(jq -r '.id' /tmp/get.json)
+                echo "INFO: Updating existing datasource id=$id name=$DS_NAME"
+                curl -sS -f -u "$GF_USER:$GF_PASS" -H 'Content-Type: application/json' \
+                  -X PUT "$GF_URL/api/datasources/$id" \
+                  --data-binary @/tmp/ds.json >/tmp/put.json
+                echo "OK: Updated datasource"
+              else
+                echo "INFO: Creating datasource name=$DS_NAME"
+                curl -sS -f -u "$GF_USER:$GF_PASS" -H 'Content-Type: application/json' \
+                  -X POST "$GF_URL/api/datasources" \
+                  --data-binary @/tmp/ds.json >/tmp/post.json
+                echo "OK: Created datasource"
+              fi
+
+              # Verify
+              curl -sS -f -u "$GF_USER:$GF_PASS" \
+                "$GF_URL/api/datasources/name/$DS_NAME" | jq -r '.name,.type,.url'
+          env:
+            - name: GF_USER
+              valueFrom:
+                secretKeyRef:
+                  name: jallybean-grafana
+                  key: admin-user
+            - name: GF_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: jallybean-grafana
+                  key: admin-password
