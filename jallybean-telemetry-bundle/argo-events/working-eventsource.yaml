@@ -1,0 +1,11 @@
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: working-eventsource
+  namespace: jallybean-telemetry
+spec:
+  http:
+    example:
+      port: "12000"
+      endpoint: /event
+      method: POST

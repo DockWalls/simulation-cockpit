@@ -1,0 +1,20 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: telemetry-trigger
+spec:
+  params:
+    - name: animation_state
+  resourcetemplates:
+    - apiVersion: batch/v1
+      kind: Job
+      metadata:
+        name: animate-$(params.animation_state)
+      spec:
+        template:
+          spec:
+            containers:
+              - name: animator
+                image: ghcr.io/jallybean/animator:stable
+                args: ["$(params.animation_state)"]
+            restartPolicy: Never

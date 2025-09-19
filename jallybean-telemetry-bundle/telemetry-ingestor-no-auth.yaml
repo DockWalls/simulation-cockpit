@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: telemetry-ingestor
+  namespace: jallybean-telemetry
+  labels:
+    app: telemetry-ingestor
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: telemetry-ingestor
+  template:
+    metadata:
+      labels:
+        app: telemetry-ingestor
+        jallybean_audit: "true"
+    spec:
+      serviceAccountName: telemetry-ingestor
+      containers:
+        - name: api
+          image: ghcr.io/jallybean/telemetry-ingestor:stable
+          imagePullPolicy: IfNotPresent
+          args:
+            - --require-auth=none
+            - --schema=/etc/schema/schema.json
+            - --emit-fields=trace_id,timestamp,event,decision,ledger_entry
+          env:
+            - name: PORT
+              value: "8080"
+            - name: VAULT_ADDR
+              value: "http://jallybean-vault.jallybean-telemetry.svc:8200"
+            - name: KEYCLOAK_REALM
+              value: "JallybeanTelemetry"
+            - name: LOG_FORMAT
+              value: "json"
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: { cpu: "100m", memory: "128Mi" }
+            limits: { cpu: "500m", memory: "512Mi" }
+          volumeMounts:
+            - name: schema
+              mountPath: /etc/schema
+              readOnly: true
+      volumes:
+        - name: schema
+          configMap:
+            name: telemetry-schema

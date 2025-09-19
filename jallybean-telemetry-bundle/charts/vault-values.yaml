@@ -1,0 +1,17 @@
+server:
+  ha:
+    enabled: false
+  dev:
+    enabled: false
+  dataStorage:
+    enabled: true
+    size: 1Gi
+  auditStorage:
+    enabled: true
+    size: 1Gi
+  service:
+    type: ClusterIP
+ui:
+  enabled: true
+global:
+  enabled: true

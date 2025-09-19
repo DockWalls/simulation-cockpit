@@ -1,0 +1,11 @@
+auth:
+  adminUser: admin
+  adminPassword: "ChangeMeAdminPwd"
+proxy: edge
+service:
+  type: ClusterIP
+postgresql:
+  enabled: true
+extraEnvVars:
+  - name: KEYCLOAK_LOGLEVEL
+    value: INFO

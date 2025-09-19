@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: trigger-evidence-pack
+  namespace: jallybean-telemetry
+spec:
+  serviceAccountName: argo-events-sa
+  dependencies:
+    - name: http-dep
+      eventSourceName: http-evidence
+      eventName: evidence
+  triggers:
+    - template:
+        name: run-evidence-pack
+        k8s:
+          group: tekton.dev
+          version: v1beta1
+          resource: pipelineruns
+          operation: create
+          source:
+            resource:
+              apiVersion: tekton.dev/v1beta1
+              kind: PipelineRun
+              metadata:
+                generateName: evidence-pack-run-
+                namespace: jallybean-telemetry
+              spec:
+                pipelineRef:
+                  name: evidence-pack
+                workspaces: []
+                params: []
+          parameters: []

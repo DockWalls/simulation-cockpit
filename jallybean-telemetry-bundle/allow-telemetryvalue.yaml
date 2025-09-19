@@ -1,0 +1,6 @@
+apiVersion: jallybean.telemetry/v1alpha1
+kind: TelemetryValue
+metadata:
+  name: tv-ok
+  namespace: jallybean-telemetry
+value: 0.5

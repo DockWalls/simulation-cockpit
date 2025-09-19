@@ -1,0 +1,8 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: telemetry-anim-binding
+spec:
+  params:
+    - name: animation_state
+      value: $(body.animation_state)

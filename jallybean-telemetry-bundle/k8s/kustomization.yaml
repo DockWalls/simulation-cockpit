@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: jallybean-telemetry
+resources:
+  - ns.yaml
+  - networkpolicy.yaml
+  - telemetry-schema-cm.yaml
+  - telemetry-ingestor-deploy.yaml
+  - telemetry-ingestor-svc.yaml
+  - rbac.yaml
+  - policy/alert-threshold-template.yaml
+  - policy/alert-threshold-085.yaml
+  - tekton/serviceaccount.yaml
+  - tekton/rbac.yaml
+  - tekton/trigger-template.yaml
+  - tekton/trigger-binding.yaml
+  - tekton/event-listener.yaml
+  - tekton/pipeline-evidence.yaml

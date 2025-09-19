@@ -1,0 +1,16 @@
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: http-es
+  namespace: jallybean-telemetry
+spec:
+  eventBusName: default
+  service:
+    ports:
+      - port: 12000
+        targetPort: 12000
+  webhook:
+    receiver:
+      endpoint: /event
+      method: POST
+      port: "12000"

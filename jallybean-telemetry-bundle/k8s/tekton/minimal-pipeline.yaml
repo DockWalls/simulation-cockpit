@@ -1,0 +1,14 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: minimal-pipeline
+  namespace: jallybean-telemetry
+spec:
+  tasks:
+    - name: echo
+      taskSpec:
+        steps:
+          - name: say
+            image: alpine:3.20
+            script: |
+              echo "Jallybean pipeline received a trigger."

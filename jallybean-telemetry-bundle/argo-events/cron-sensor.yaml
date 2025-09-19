@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: cron-sensor
+  namespace: jallybean-telemetry
+spec:
+  template:
+    serviceAccountName: working-sensor-sa
+  dependencies:
+    - name: minutely-dep
+      eventSourceName: cron-es
+      eventName: minutely
+  triggers:
+    - template:
+        name: run-minimal-pipeline
+        k8s:
+          group: tekton.dev
+          version: v1beta1
+          resource: pipelineruns
+          operation: create
+          source:
+            resource:
+              apiVersion: tekton.dev/v1beta1
+              kind: PipelineRun
+              metadata:
+                generateName: cron-minimal-
+              spec:
+                pipelineRef:
+                  name: minimal-pipeline

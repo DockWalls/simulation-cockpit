@@ -1,0 +1,11 @@
+apiVersion: argoproj.io/v1alpha1
+kind: EventSource
+metadata:
+  name: cron-es
+  namespace: jallybean-telemetry
+spec:
+  eventBusName: default
+  calendar:
+    minutely:
+      schedule: "* * * * *"
+      timezone: "UTC"

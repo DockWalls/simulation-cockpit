@@ -1,0 +1,22 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: alertthreshold
+spec:
+  crd:
+    spec:
+      names:
+        kind: AlertThreshold
+      validation:
+        openAPIV3Schema:
+          properties:
+            threshold:
+              type: number
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package alertthreshold
+        violation[{"msg": msg}] {
+          input.review.object.value > input.parameters.threshold
+          msg := sprintf("alert value %.3f exceeds threshold %.2f", [input.review.object.value, input.parameters.threshold])
+        }

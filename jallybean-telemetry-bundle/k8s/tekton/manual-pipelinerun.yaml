@@ -1,0 +1,8 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: manual-minimal-run
+  namespace: jallybean-telemetry
+spec:
+  pipelineRef:
+    name: minimal-pipeline

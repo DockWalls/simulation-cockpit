@@ -1,0 +1,42 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tekton-triggers-sa-role
+rules:
+- apiGroups: ["triggers.tekton.dev"]
+  resources: ["interceptors", "eventlisteners", "triggerbindings", "triggers", "triggertemplates"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tekton-triggers-sa-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: tekton-triggers-sa
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tekton-triggers-sa-role
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: tekton-triggers-sa-clusterrole
+rules:
+- apiGroups: ["triggers.tekton.dev"]
+  resources: ["clusterinterceptors", "clustertriggerbindings"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tekton-triggers-sa-clusterrolebinding
+subjects:
+- kind: ServiceAccount
+  name: tekton-triggers-sa
+  namespace: jallybean-telemetry
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-triggers-sa-clusterrole

@@ -1,0 +1,25 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: event-pipeline
+  namespace: jallybean-telemetry
+spec:
+  params:
+    - name: event-id
+      type: string
+      default: unknown
+    - name: metric-value
+      type: string
+      default: "0"
+  tasks:
+    - name: echo
+      taskSpec:
+        params:
+          - name: event-id
+          - name: metric-value
+        steps:
+          - name: say
+            image: alpine:3.20
+            script: |
+              echo "Event ID: $(params.event-id)"
+              echo "Metric Value: $(params.metric-value)"

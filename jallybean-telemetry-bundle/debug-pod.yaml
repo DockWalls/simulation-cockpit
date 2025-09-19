@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: debugbox
+  namespace: jallybean-telemetry
+spec:
+  containers:
+  - name: debugbox
+    image: curlimages/curl
+    command: ["sleep", "3600"]

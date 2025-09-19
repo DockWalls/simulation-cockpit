@@ -1,0 +1,33 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: evidence-pack
+spec:
+  params:
+    - name: grafana_url
+      type: string
+    - name: api_key
+      type: string
+    - name: panel_path
+      type: string
+  tasks:
+    - name: export-dashboard
+      taskSpec:
+        params:
+          - name: grafana_url
+          - name: api_key
+          - name: panel_path
+        steps:
+          - name: grafana-render
+            image: curlimages/curl
+            script: |
+              set -e
+              curl -H "Authorization: Bearer $(params.api_key)" \
+                   "$(params.grafana_url)/render$(params.panel_path)" \
+                   -o /workspace/dashboard.png
+    - name: export-lineage
+      taskSpec:
+        steps:
+          - name: lineage-export
+            image: ghcr.io/jallybean/marquez-exporter:stable
+            args: ["--output","/workspace/lineage.json"]

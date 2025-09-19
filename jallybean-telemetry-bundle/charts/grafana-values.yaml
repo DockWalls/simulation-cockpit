@@ -1,0 +1,14 @@
+adminUser: admin
+adminPassword: "JallySecure2025"
+service:
+  type: ClusterIP
+grafana.ini:
+  security:
+    cookie_secure: true
+    allow_embedding: true
+  render:
+    capture_timeout: 30
+imageRenderer:
+  enabled: true
+  serviceMonitor:
+    enabled: false

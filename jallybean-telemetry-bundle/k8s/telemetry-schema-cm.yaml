@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telemetry-schema
+data:
+  schema.json: |
+    {
+      "type": "object",
+      "required": ["event_id", "timestamp", "metric_type", "value"],
+      "properties": {
+        "event_id": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "panel": { "type": "string" },
+        "metric_type": { "type": "string" },
+        "value": { "type": "number" },
+        "unit": { "type": "string" },
+        "source": { "type": "string" },
+        "status": { "type": "string" },
+        "visual_trigger": { "type": "string" },
+        "animation_state": { "type": "string" }
+      },
+      "additionalProperties": false
+    }

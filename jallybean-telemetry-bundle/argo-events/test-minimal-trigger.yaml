@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: minimal-trigger-sensor
+  namespace: jallybean-telemetry
+spec:
+  dependencies:
+    - name: minimal-dep
+      eventSourceName: working-eventsource
+      eventName: example
+  triggers:
+    - template:
+        name: minimal-pipelinerun-trigger
+        k8s:
+          group: tekton.dev
+          version: v1beta1
+          resource: pipelineruns
+          operation: create
+          source:
+            resource:
+              apiVersion: tekton.dev/v1beta1
+              kind: PipelineRun
+              metadata:
+                generateName: minimal-run-
+              spec:
+                pipelineRef:
+                  name: minimal-pipeline

@@ -1,0 +1,14 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: telemetry-anim-listener
+  namespace: jallybean-telemetry
+spec:
+  serviceAccountName: tekton-triggers-sa
+  triggers:
+    - name: telemetry-trigger
+      bindings:
+        - ref: telemetry-anim-binding
+      template:
+        ref: telemetry-trigger
+      interceptors: []
