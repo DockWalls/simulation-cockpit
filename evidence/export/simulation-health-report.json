@@ -1,0 +1,49 @@
+{
+  "report_id": "sim-health-2025-09-18T2008Z",
+  "region": "us-west-2",
+  "timestamp": "2025-09-18T20:08:00Z",
+  "summary": {
+    "total_clauses": 128,
+    "total_deviations": 37,
+    "total_retries": 22,
+    "successful_recoveries": 19,
+    "overall_resilience_score": 0.84
+  },
+  "personas": [
+    {
+      "persona": "commander-alpha",
+      "clauses_executed": 42,
+      "deviations": 11,
+      "retries": 7,
+      "recoveries": 6,
+      "confidence_mean": 0.91,
+      "alignment_mean": 0.88,
+      "resilience_score": 0.86
+    },
+    {
+      "persona": "analyst-beta",
+      "clauses_executed": 38,
+      "deviations": 13,
+      "retries": 9,
+      "recoveries": 7,
+      "confidence_mean": 0.89,
+      "alignment_mean": 0.85,
+      "resilience_score": 0.82
+    },
+    {
+      "persona": "operator-gamma",
+      "clauses_executed": 48,
+      "deviations": 13,
+      "retries": 6,
+      "recoveries": 6,
+      "confidence_mean": 0.93,
+      "alignment_mean": 0.91,
+      "resilience_score": 0.87
+    }
+  ],
+  "evidence_bundle": {
+    "pose_deviation_log": "pose-deviation-events.json",
+    "retry_log": "clause-retry-events.json",
+    "resilience_metrics": "persona-resilience-dashboard.json"
+  }
+}
