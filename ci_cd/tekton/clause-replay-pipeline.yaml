@@ -35,8 +35,9 @@ spec:
             image: ghcr.io/jallybean/clause-scorer:latest
             script: |
               python score.py \
-                --input /evidence/replay \
-                --output /evidence/score
+                --input /evidence/hud \
+                --output /evidence/score \
+                --pose-map /evidence/replay/clause-pose-map.yaml
             volumeMounts:
               - name: evidence-volume
                 mountPath: /evidence
