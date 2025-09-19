@@ -1,8 +1,11 @@
 import React, { useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { useGLTF, useAnimations } from '@react-three/drei'
+import { useHudFrame } from '../hooks/useHudFrame'
 
-export function CommanderAlphaViewer({ hudFrame }) {
+export default function Viewer() {
+  const hudFrame = useHudFrame()
+
   const { scene, animations } = useGLTF('/models/commander-alpha.glb')
   const { actions } = useAnimations(animations, scene)
 
