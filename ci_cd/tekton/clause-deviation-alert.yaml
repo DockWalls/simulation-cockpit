@@ -1,0 +1,35 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: clause-deviation-alert
+spec:
+  params:
+    - name: clause_id
+    - name: persona
+    - name: deviation_type
+    - name: frame_id
+    - name: confidence
+  resourcetemplates:
+    - apiVersion: batch/v1
+      kind: Job
+      metadata:
+        generateName: deviation-alert-
+      spec:
+        template:
+          spec:
+            containers:
+              - name: alert
+                image: ghcr.io/jallybean/deviation-alert:latest
+                env:
+                  - name: CLAUSE_ID
+                    value: "$(params.clause_id)"
+                  - name: PERSONA
+                    value: "$(params.persona)"
+                  - name: DEVIATION_TYPE
+                    value: "$(params.deviation_type)"
+                  - name: FRAME_ID
+                    value: "$(params.frame_id)"
+                  - name: CONFIDENCE
+                    value: "$(params.confidence)"
+                command: ["python", "alert.py"]
+            restartPolicy: Never
