@@ -1,0 +1,17 @@
+clauses:
+  - clause_id: telemetry-042
+    persona: commander-alpha
+    region: us-west-2
+    viewer_url: https://simulation-cockpit.web.app/viewer?clause_id=telemetry-042
+    hud_frame: https://storage.googleapis.com/sim-cockpit-data/hud-frame-042.json
+    fidelity_report: https://storage.googleapis.com/sim-cockpit-data/clause-fidelity-report-042.json
+    recovery_status: recovered
+    resilience_score: 0.86
+  - clause_id: telemetry-043
+    persona: analyst-beta
+    region: us-west-2
+    viewer_url: https://simulation-cockpit.web.app/viewer?clause_id=telemetry-043
+    hud_frame: https://storage.googleapis.com/sim-cockpit-data/hud-frame-043.json
+    fidelity_report: https://storage.googleapis.com/sim-cockpit-data/clause-fidelity-report-043.json
+    recovery_status: deviation
+    resilience_score: 0.82
