@@ -1,0 +1,40 @@
+avatar_id: commander-alpha
+model: commander-alpha.glb
+rig:
+  skeleton:
+    root_bone: hips
+    bones:
+      - name: spine
+      - name: neck
+      - name: head
+      - name: left_arm
+      - name: right_arm
+      - name: left_hand
+      - name: right_hand
+      - name: left_leg
+      - name: right_leg
+  animations:
+    directive:
+      file: directive.glb
+      duration: 2.0
+      loop: false
+      fidelity_threshold: 0.90
+    nod-confirm:
+      file: nod-confirm.glb
+      duration: 1.2
+      loop: false
+      alignment_tolerance: 0.05
+    idle:
+      file: idle.glb
+      duration: 5.0
+      loop: true
+      fallback: true
+pose_map:
+  directive:
+    bones:
+      head: rotation(0, 0, -15)
+      right_arm: rotation(0, 0, 45)
+  nod-confirm:
+    bones:
+      head: oscillate(y=±10°, speed=1.2s)
+      neck: stabilize
