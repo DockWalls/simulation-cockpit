@@ -1,0 +1,21 @@
+{
+  "bundle_id": "score-2025-09-18T1858Z",
+  "clause_id": "clause-telemetry-042",
+  "persona": "commander-alpha",
+  "region": "us-west-2",
+  "timestamp": "2025-09-18T18:58:00Z",
+  "scores": {
+    "clause_score": 0.92,
+    "replay_fidelity": 0.87,
+    "avatar_accuracy": 0.94,
+    "hud_alignment": 0.89
+  },
+  "metrics": {
+    "latency_ms": 142,
+    "frame_drop_rate": 0.003,
+    "telemetry_loss": 0.001,
+    "dispatch_success_rate": 0.998
+  },
+  "status": "pass",
+  "notes": "Clause rendered with high fidelity. Minor HUD misalignment detected in frame 17."
+}
