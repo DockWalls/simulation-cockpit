@@ -1,0 +1,11 @@
+{
+  "hosting": {
+    "public": "public",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      { "source": "/viewer", "destination": "/index.html" },
+      { "source": "/clause-selector", "destination": "/index.html" },
+      { "source": "/jallybean", "destination": "/index.html" }
+    ]
+  }
+}
