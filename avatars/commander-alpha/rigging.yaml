@@ -32,9 +32,13 @@ rig:
 pose_map:
   directive:
     bones:
-      head: rotation(0, 0, -15)
-      right_arm: rotation(0, 0, 45)
+      head:
+        quaternion: [0, 0, 0.382683, 0.92388]  # Example: 45° rotation around Z
+      right_arm:
+        quaternion: [0, 0, 0, 1] # Placeholder
   nod-confirm:
     bones:
-      head: oscillate(y=±10°, speed=1.2s)
-      neck: stabilize
+      head:
+        quaternion: [0, 0, 0, 1] # Placeholder
+      neck:
+        quaternion: [0, 0, 0, 1] # Placeholder

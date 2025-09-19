@@ -2,11 +2,14 @@ import React, { useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { useGLTF, useAnimations } from '@react-three/drei'
 import { useHudFrame } from '../hooks/useHudFrame'
+import { comparePoseQuaternion } from '../utils/comparePoseQuaternion'
 
 export default function Viewer() {
   const hudFrame = useHudFrame()
 
-  const poseMatch = true; // Placeholder for actual pose comparison
+  // Placeholder for rigSpec until rigging.yaml is loaded
+  const rigSpec = {}; 
+  const poseMatch = hudFrame?.avatar && rigSpec[hudFrame.avatar.pose] ? comparePoseQuaternion(hudFrame.avatar, rigSpec[hudFrame.avatar.pose]) : true;
 
   const { scene, animations } = useGLTF('/models/commander-alpha.glb')
   const { actions } = useAnimations(animations, scene)
