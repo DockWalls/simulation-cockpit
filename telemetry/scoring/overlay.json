@@ -8,6 +8,19 @@
     "schemaVersion": 38,
     "version": 1,
     "refresh": "30s",
+    "annotations": {
+      "list": [
+        {
+          "name": "Pose Deviations",
+          "datasource": "Loki",
+          "enable": true,
+          "expr": "{event=\"pose_deviation\"}",
+          "iconColor": "red",
+          "lineColor": "rgba(255,0,0,0.5)",
+          "textFormat": "{{clause_id}}: {{details.bone}} Δ{{details.angle_delta}}°"
+        }
+      ]
+    },
     "panels": [
       {
         "type": "graph",
