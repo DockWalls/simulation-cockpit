@@ -1,0 +1,31 @@
+main:
+  params: [event, score, source]
+  steps:
+    - validate_score:
+        assign:
+          - threshold: 0.85
+          - escalate: ${score > threshold}
+
+    - generate_trace:
+        call: sys.now
+        result: timestamp
+
+    - generate_uuid:
+        call: sys.get_env
+        args:
+          key: WORKFLOW_EXECUTION_ID
+        result: trace_id
+
+    - emit_decision:
+        assign:
+          - decision: ${escalate ? "trigger_crisis" : "no_action"}
+          - ledger_entry:
+              trace_id: ${trace_id}
+              timestamp: ${timestamp}
+              event: ${event}
+              decision: ${decision}
+              score: ${score}
+              source: ${source}
+
+    - log_output:
+        return: ${ledger_entry}
