@@ -14,7 +14,13 @@ Usage:
 
 import argparse
 import sys
+import os
 from pathlib import Path
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
+from JVerse.governance.rulebook_updater import append_violation
+from JVerse.governance.governance_emitter import emit_log
 
 try:
     import yaml  # PyYAML
@@ -110,10 +116,13 @@ def main():
         print("Parser hygiene violations detected:")
         for i in issues:
             print("- " + i)
+            append_violation(str(path), "parser_hygiene_violation", i)
+            emit_log("parser_guard_validation", "block_deploy", i)
         if args.exit_on_fail:
             sys.exit(1)
     else:
         print("YAML and hygiene checks passed.")
+        emit_log("parser_guard_validation", "success", "All checks passed")
         sys.exit(0)
 
 
