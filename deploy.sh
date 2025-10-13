@@ -13,7 +13,12 @@ DATE=$(date +%Y%m%d)
 # STEP 1: Authenticate to Google Cloud
 # ─────────────────────────────────────────────────────────────
 echo "Authenticating to Google Cloud..."
-gcloud auth activate-service-account "$SERVICE_ACCOUNT" --key-file="$GCP_KEY_PATH"
+if [ -z "$1" ]; then
+  echo "Error: Path to GCP key file not provided."
+  echo "Usage: ./deploy.sh <path-to-key-file>"
+  exit 1
+fi
+gcloud auth activate-service-account "$SERVICE_ACCOUNT" --key-file="$1"
 gcloud config set project "$PROJECT_ID"
 
 # ─────────────────────────────────────────────────────────────
