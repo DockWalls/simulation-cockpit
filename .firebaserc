@@ -1,5 +1,14 @@
 {
   "projects": {
     "default": "simulation-cockpit"
+  },
+  "targets": {
+    "simulation-cockpit": {
+      "hosting": {
+        "jversehud": [
+          "jversehud"
+        ]
+      }
+    }
   }
 }

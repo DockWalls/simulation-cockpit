@@ -1,0 +1,15 @@
+.jverse-scene {
+  position: relative;
+  height: 420px;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  background-color: #0f172a;
+}
+
+.jverse-scene.TPE {
+  background-image: url('/backgrounds/tpe.png');
+}
+
+.jverse-scene.EU {
+  background-image: url('/backgrounds/eu.png');
+}

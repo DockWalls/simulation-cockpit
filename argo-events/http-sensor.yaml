@@ -1,0 +1,44 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: http-sensor
+  namespace: jallybean-telemetry
+spec:
+  template:
+    serviceAccountName: working-sensor-sa
+  dependencies:
+    - name: http-recv
+      eventSourceName: http-es
+      eventName: receiver
+  triggers:
+    - template:
+        name: run-event-pipeline
+        k8s:
+          group: tekton.dev
+          version: v1
+          resource: pipelineruns
+          operation: create
+          source:
+            resource:
+              apiVersion: tekton.dev/v1
+              kind: PipelineRun
+              metadata:
+                generateName: http-event-run-
+                namespace: jallybean-telemetry
+              spec:
+                pipelineRef:
+                  name: event-pipeline
+                params:
+                  - name: event-id
+                    value: ""          # <--- placeholder string
+                  - name: metric-value
+                    value: ""          # <--- placeholder string
+      parameters:
+        - src:
+            dependencyName: http-recv
+            dataKey: body.event_id
+          dest: spec.params.0.value
+        - src:
+            dependencyName: http-recv
+            dataKey: body.value
+          dest: spec.params.1.value

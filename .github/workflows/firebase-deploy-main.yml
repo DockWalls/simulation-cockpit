@@ -1,0 +1,40 @@
+name: Firebase Deploy (Service Account)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Lint
+        run: npm run lint
+
+      - name: Run Tests with Coverage
+        run: npm test
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Set up service account credentials
+        run: |
+          echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}" > $HOME/gcloud.json
+          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/gcloud.json"
+
+      - name: Deploy to Firebase
+        if: success()
+        run: firebase deploy --project simulation-cockpit

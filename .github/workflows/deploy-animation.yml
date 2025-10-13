@@ -1,0 +1,64 @@
+name: Deploy Jallybean Avatar Animation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'avatars/**'
+      - 'JVerse/validators/validator.py'
+      - '.github/workflows/deploy-animation.yml'
+
+jobs:
+  validate-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install validator dependencies
+      run: |
+        pip install -r JVerse/validators/requirements-validator.txt
+
+    - name: Run validator.py
+      run: |
+        python JVerse/validators/validator.py --mode=batch --check=animation --exit-on-fail > validator.log
+
+    - name: Deploy to Firebase
+      run: |
+        export FIREBASE_TOKEN=${{ secrets.FIREBASE_TOKEN }}
+        firebase deploy --only hosting
+        firebase deploy --only hosting:jversehud
+
+    - name: Trigger Cloud Run animation endpoint
+      run: |
+        curl -X POST https://jverse-backend-372419426577.us-central1.run.app/trigger-animation \
+          -H "Authorization: Bearer ${{ secrets.CLOUD_RUN_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{"event":"avatar_animation","source":"ci_cd","context":"greeting","ethics":"nonviolent"}'
+
+    - name: Log deployment to Jallybean Rulebook
+      run: |
+        echo "$(date) - Avatar animation deployed via CI/CD" >> rulebook.log
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v1
+      with:
+        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+    - name: Archive Telemetry Snapshots
+      run: |
+        gsutil cp validator.log gs://jallybean-telemetry-archive/$(date +%Y%m%d)/validator.log
+        gsutil cp rulebook.log gs://jallybean-telemetry-archive/$(date +%Y%m%d)/rulebook.log
+
+    - name: Commit rulebook.log
+      run: |
+        git add rulebook.log
+        git commit -m "Log animation deployment"
+        git push

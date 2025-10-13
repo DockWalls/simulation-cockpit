@@ -1,0 +1,87 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: export-task
+spec:
+  params:
+    - name: bundle_id
+    - name: target_system
+    - name: format
+  steps:
+    - name: download-bundle
+      image: minio/mc:RELEASE.2024-05-10T01-41-38Z
+      envFrom:
+        - secretRef:
+            name: minio-cred
+      script: |
+        #!/bin/sh
+        set -e
+        mc alias set evidence http://minio:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
+        mc cp "evidence/evidence/bundles/$(params.bundle_id)" /workspace/source/
+    - name: convert-bundle
+      image: alpine:3.20
+      script: |
+        #!/bin/sh
+        set -e
+        echo "Converting bundle $(params.bundle_id) to $(params.format)..."
+        # Placeholder for conversion logic
+        cp /workspace/source/$(params.bundle_id) /workspace/source/export.$(params.format)
+    - name: push-to-external-system
+      image: curlimages/curl:8.4.0
+      script: |
+        #!/bin/sh
+        set -e
+        echo "Pushing to $(params.target_system)..."
+        # Placeholder for pushing to external system
+        curl -X POST -F "file=@/workspace/source/export.$(params.format)" http://$(params.target_system)/upload
+    - name: emit-log
+      image: alpine:3.20
+      script: |
+        #!/bin/sh
+        set -e
+        echo '{
+          "clause": "export.dispatch",
+          "bundle_id": "$(params.bundle_id)",
+          "target_system": "$(params.target_system)",
+          "format": "$(params.format)"
+        }'
+
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: export-pipeline
+  namespace: jallybean-telemetry
+spec:
+  params:
+    - name: bundle_id
+    - name: target_system
+    - name: format
+  tasks:
+    - name: export-bundle
+      taskRef:
+        name: export-task
+      params:
+        - name: bundle_id
+          value: $(params.bundle_id)
+        - name: target_system
+          value: $(params.target_system)
+        - name: format
+          value: $(params.format)
+
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: export-run-
+  namespace: jallybean-telemetry
+spec:
+  pipelineRef:
+    name: export-pipeline
+  params:
+    - name: bundle_id
+      value: "Example-Event-20250918T163200Z.tar.gz"
+    - name: target_system
+      value: "external-system.example.com"
+    - name: format
+      value: "json"

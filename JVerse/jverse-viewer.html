@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>J-Verse Viewer Pro (Babylon.js)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Babylon core + loaders + post FX -->
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+  <script src="https://cdn.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+  <style>
+    html, body { height:100%; margin:0; background:#0b0f14; }
+    #renderCanvas { width:100%; height:100%; display:block; touch-action:none; }
+    .hud {
+      position:fixed; top:12px; left:12px; display:flex; gap:8px; flex-wrap:wrap;
+      font: 13px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:#dfe7f1;
+    }
+    .group { background:#121a22; border:1px solid #1f2b3a; border-radius:10px; padding:10px; display:flex; gap:8px; align-items:center; }
+    .row { display:flex; gap:8px; align-items:center; flex-wrap: wrap; }
+    .group h4 { margin:0 8px 0 0; font-size:12px; color:#88a5c4; }
+    input[type="text"], select {
+      background:#0e151c; color:#e9f1ff; border:1px solid #223042; border-radius:8px;
+      padding:8px 10px; min-width:240px;
+    }
+    input[type="range"] { width:160px; }
+    button {
+      background:#16202b; color:#dfe7f1; border:1px solid #1f2b3a; border-radius:8px; padding:8px 10px; cursor:pointer;
+    }
+    .toggle { display:inline-flex; align-items:center; gap:6px; }
+    .spacer { flex-basis:100%; height:0; }
+  </style>
+</head>
+<body>
+  <canvas id="renderCanvas"></canvas>
+
+  <div class="hud">
+    <div class="group">
+      <h4>Avatar</h4>
+      <input id="avatarUrl" type="text" value="https://models.readyplayer.me/68d52f0f808887d27d5b624a.glb" />
+      <button id="loadAvatar">Load</button>
+      <button id="poseFull">Full-Body Cam</button>
+      <div class="spacer"></div>
+      <input id="avatarFile" type="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json" />
+      <button id="loadAvatarFile">Load File</button>
+    </div>
+
+    <div class="group">
+      <h4>Animation</h4>
+      <input id="animUrl" type="text" placeholder="Animation-only glTF/GLB URL (same rig)" />
+      <button id="loadAnim">Apply</button>
+      <label class="toggle"><input id="loopAnim" type="checkbox" checked><span>Loop</span></label>
+    </div>
+
+    <div class="group">
+      <h4>Lighting</h4>
+      <label>HDRI:
+        <select id="hdrSelect">
+          <option value="https://assets.babylonjs.com/environments/environmentSpecular.env">Babylon Studio (env)</option>
+          <option value="https://playground.babylonjs.com/textures/environment.env">Default ENV</option>
+          <option value="https://assets.babylonjs.com/textures/Checkers/environmentSpecular.env">Checkers (env)</option>
+        </select>
+      </label>
+      <label>Exposure:
+        <input id="exposure" type="range" min="0.3" max="2.0" step="0.01" value="1.0" />
+      </label>
+    </div>
+
+    <div class="group">
+      <h4>FX</h4>
+      <label class="toggle"><input id="bloom" type="checkbox" checked><span>Bloom</span></label>
+      <label class="toggle"><input id="ssao" type="checkbox"><span>SSAO2</span></label>
+      <label class="toggle"><input id="ssr" type="checkbox"><span>SSR</span></label>
+      <button id="inspect">Inspector</button>
+    </div>
+  </div>
+
+  <script>
+  (async function(){
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer:true, stencil:true, antialias:true });
+
+    const scene = new BABYLON.Scene(engine);
+    scene.useRightHandedSystem = true; // glTF convention
+    scene.imageProcessingConfiguration.toneMappingEnabled = true;
+    scene.imageProcessingConfiguration.toneMappingType = BABYLON.ImageProcessingConfiguration.TONEMAPPING_ACES;
+    scene.imageProcessingConfiguration.exposure = 1.0;
+
+    // Camera
+    const camera = new BABYLON.ArcRotateCamera("cam", Math.PI*1.25, Math.PI*0.5, 2.2, BABYLON.Vector3.Zero(), scene);
+    camera.lowerRadiusLimit = 1.0; camera.upperRadiusLimit = 12.0; camera.wheelPrecision = 40;
+    camera.attachControl(canvas, true);
+
+    // Soft fill - main lighting is IBL
+    const hemi = new BABYLON.HemisphericLight("hemi", new BABYLON.Vector3(0,1,0), scene);
+    hemi.intensity = 0.6;
+
+    // Environment management
+    let envSkybox = null;
+    async function setEnvironment(url){
+      try {
+        const envTex = BABYLON.CubeTexture.CreateFromPrefilteredData(url, scene);
+        scene.environmentTexture = envTex;
+        if (envSkybox) envSkybox.dispose();
+        envSkybox = scene.createDefaultSkybox(envTex, true, 20, 1.0);
+        if (envSkybox && envSkybox.material) {
+          envSkybox.material.disableLighting = true;
+          envSkybox.material.microSurface = 1.0;
+        }
+      } catch(e){ console.warn("Failed to load HDRI:", e); }
+    }
+
+    // Default ENV
+    await setEnvironment("https://assets.babylonjs.com/environments/environmentSpecular.env");
+
+    // Default FX
+    const defaultPipeline = new BABYLON.DefaultRenderingPipeline("default", true, scene, [camera]);
+    defaultPipeline.fxaaEnabled = true;
+    defaultPipeline.bloomEnabled = true;
+    defaultPipeline.bloomKernel = 64;
+    defaultPipeline.bloomThreshold = 0.8;
+    defaultPipeline.bloomWeight = 0.25;
+
+    let ssaoPipeline = null;
+    function enableSSAO(on) {
+      if (on && !ssaoPipeline) {
+        ssaoPipeline = new BABYLON.SSAO2RenderingPipeline("ssao2", scene, { ssaoRatio:0.75, blurRatio:0.5 });
+        ssaoPipeline.radius = 2.0; ssaoPipeline.totalStrength = 0.8; ssaoPipeline.expensiveBlur = true;
+        ssaoPipeline.samples = 16; ssaoPipeline.maxZ = 250;
+        scene.postProcessRenderPipelineManager.attachCamerasToRenderPipeline("ssao2", camera);
+      } else if (!on && ssaoPipeline) {
+        scene.postProcessRenderPipelineManager.detachCamerasFromRenderPipeline("ssao2", camera);
+        ssaoPipeline.dispose(); ssaoPipeline = null;
+      }
+    }
+
+    let ssrPipeline = null;
+    function enableSSR(on) {
+      const webgl2 = engine.webGLVersion && engine.webGLVersion >= 2;
+      if (!webgl2) { alert("SSR requires WebGL2."); document.getElementById('ssr').checked = false; return; }
+      if (on && !ssrPipeline) {
+        ssrPipeline = new BABYLON.SSRRenderingPipeline("ssr", scene, [camera], false, BABYLON.Constants.TEXTURETYPE_UNSIGNED_BYTE);
+        ssrPipeline.reflectionSpecularFalloffExponent = 2.0;
+        ssrPipeline.reflectionSamples = 16;
+        ssrPipeline.blurDispersion = 0.5;
+        ssrPipeline.blurQuality = BABYLON.SSRRenderingPipeline.BLUR_QUALITY_HIGH;
+      } else if (!on && ssrPipeline) {
+        scene.postProcessRenderPipelineManager.detachCamerasFromRenderPipeline("ssr", camera);
+        ssrPipeline.dispose(); ssrPipeline = null;
+      }
+    }
+
+    // Avatar load / replace
+    let avatarRoot = null;
+    let mainSkeleton = null;
+    async function loadAvatar(url){
+      // Clear old
+      scene.stopAllAnimations();
+      if (avatarRoot) avatarRoot.getScene().meshes.slice().forEach(m => { if (m.metadata && m.metadata.__avatar) m.dispose(); });
+      if (avatarRoot) avatarRoot.dispose(); mainSkeleton = null;
+
+      try {
+        const u = new URL(url);
+        const rootUrl = u.origin + u.pathname.substring(0, u.pathname.lastIndexOf('/') + 1);
+        const sceneFilename = u.pathname.substring(u.pathname.lastIndexOf('/') + 1);
+        const container = await BABYLON.SceneLoader.LoadAssetContainerAsync(rootUrl, sceneFilename, scene);
+        
+        avatarRoot = new BABYLON.TransformNode("avatarRoot", scene);
+        container.meshes.forEach(m => {
+          if (!m.parent) m.parent = avatarRoot;
+          m.metadata = m.metadata || {};
+          m.metadata.__avatar = true;
+        });
+        container.addAllToScene();
+
+        // Find skeleton (RPM exports 1 armature)
+        if (container.skeletons && container.skeletons.length) {
+          mainSkeleton = container.skeletons[0];
+        }
+
+        // Material sanity for PBR
+        scene.meshes.forEach(mesh => {
+          if (mesh.metadata && mesh.metadata.__avatar) {
+            const mat = mesh.material;
+            if (mat && mat.getClassName && mat.getClassName() === "PBRMaterial") {
+              mat.useRoughnessFromMetallicTextureAlpha = false;
+              mat.useRoughnessFromMetallicTextureGreen = true;
+              mat.environmentIntensity = 1.0;
+              mat.metallic = 0.0;
+            }
+          }
+        });
+
+        // Frame camera
+        scene.executeWhenReady(() => {
+          const bb = avatarRoot.getBoundingInfo().boundingBox;
+          camera.setTarget(bb.centerWorld);
+          camera.radius = avatarRoot.getBoundingInfo().diagonalLength * 0.9 + 1.2;
+        });
+      } catch (e) {
+        console.error("Avatar load failed:", e);
+        alert("Could not load the GLB. Try downloading it locally (see instructions).");
+      }
+    }
+
+    // Animation load (expects animation-only glTF/GLB on same rig)
+    async function applyAnimation(url, doLoop){
+      if (!mainSkeleton) { alert("Load an avatar first."); return; }
+      // Load into a temp scene then copy ranges
+      const tmpScene = new BABYLON.Scene(engine);
+      try {
+        await BABYLON.SceneLoader.AppendAsync(url, null, tmpScene);
+        if (tmpScene.skeletons.length === 0) { alert("No skeleton/animation found in clip."); tmpScene.dispose(); return; }
+        const clipSkel = tmpScene.skeletons[0];
+        // Copy all animation ranges to mainSkeleton
+        const ranges = clipSkel.getAnimationRanges();
+        if (!ranges || ranges.length === 0) {
+          // If no named ranges, still try copying the skeleton anims
+          mainSkeleton.copyAnimationRange(clipSkel, null, true, true);
+        } else {
+          ranges.forEach(r => mainSkeleton.copyAnimationRange(clipSkel, r.name, true, true));
+        }
+        // Play
+        scene.stopAnimation(mainSkeleton);
+        const from = 0, to = mainSkeleton.getHighestAnimationFrame();
+        BABYLON.SceneLoader.ImportAnimations = true;
+        scene.beginAnimation(mainSkeleton, from, to, !!doLoop, 1.0);
+      } catch (e) {
+        console.error(e);
+        alert("Failed to load/apply animation. Ensure it is a glTF/GLB with animation tracks for the same rig.");
+      } finally {
+        tmpScene.dispose();
+      }
+    }
+
+    // UI wiring
+    document.getElementById("hdrSelect").addEventListener("change", e => setEnvironment(e.target.value));
+    document.getElementById("exposure").addEventListener("input", e => scene.imageProcessingConfiguration.exposure = parseFloat(e.target.value));
+    document.getElementById("bloom").addEventListener("change", e => defaultPipeline.bloomEnabled = e.target.checked);
+    document.getElementById("ssao").addEventListener("change", e => enableSSAO(e.target.checked));
+    document.getElementById("ssr").addEventListener("change", e => enableSSR(e.target.checked));
+    document.getElementById("inspect").addEventListener("click", () => scene.debugLayer.isVisible() ? scene.debugLayer.hide() : scene.debugLayer.show({ overlay:true }));
+
+    document.getElementById("loadAvatar").addEventListener("click", async () => {
+      const url = document.getElementById("avatarUrl").value.trim();
+      if (!url) return;
+      await loadAvatar(url);
+    });
+
+    document.getElementById("poseFull").addEventListener("click", () => {
+      if (!avatarRoot) return;
+      const bb = avatarRoot.getBoundingInfo().boundingBox;
+      camera.setTarget(bb.centerWorld);
+      camera.beta = Math.PI * 0.42;
+      camera.alpha = Math.PI * 1.2;
+      camera.radius = avatarRoot.getBoundingInfo().diagonalLength * 1.25 + 1.5;
+    });
+
+    document.getElementById("loadAnim").addEventListener("click", async () => {
+      const url = document.getElementById("animUrl").value.trim();
+      const loop = document.getElementById("loopAnim").checked;
+      if (!url) return;
+      await applyAnimation(url, loop);
+    });
+
+    document.getElementById("loadAvatarFile").addEventListener("click", async () => {
+      const f = document.getElementById("avatarFile").files[0];
+      if (!f) return;
+      const objectUrl = URL.createObjectURL(f);
+      await loadAvatar(objectUrl);
+      // optional: URL.revokeObjectURL(objectUrl) later
+    });
+
+    // Boot: load default avatar
+    await loadAvatar(document.getElementById("avatarUrl").value);
+
+    // Render
+    engine.runRenderLoop(() => scene.render());
+    window.addEventListener("resize", () => engine.resize());
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Sensor
+metadata:
+  name: http-dump-sensor
+  namespace: jallybean-telemetry
+spec:
+  template:
+    serviceAccountName: working-sensor-sa
+  dependencies:
+    - name: http-recv
+      eventSourceName: http-es
+      eventName: receiver
+  triggers:
+    - template:
+        name: dump-cm
+        k8s:
+          group: ""
+          version: v1
+          resource: configmaps
+          operation: create
+          source:
+            resource:
+              apiVersion: v1
+              kind: ConfigMap
+              metadata:
+                generateName: http-event-dump-
+                namespace: jallybean-telemetry
+              data:
+                full: ""
+                body: ""
+        parameters:
+          - src: { dependencyName: http-recv, dataKey: "", jqFilter: "." }
+            dest: data.full

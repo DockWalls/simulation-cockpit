@@ -1,0 +1,161 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: clause-evidence-bundle-task
+spec:
+  params:
+    - name: region
+    - name: event
+    - name: severity
+    - name: timestamp
+    - name: tenant
+    - name: hud_snapshot_path
+    - name: log_query
+  steps:
+    - name: fetch-logs
+      image: grafana/logcli:2.9.8
+      script: |
+        #!/bin/sh
+        set -e
+        logcli --addr=http://loki:3100 query --no-labels --timezone=UTC "$(params.log_query)" > /workspace/source/logs.txt
+    - name: fetch-hud-image
+      image: minio/mc:RELEASE.2024-05-10T01-41-38Z
+      envFrom:
+        - secretRef:
+            name: minio-cred
+      script: |
+        #!/bin/sh
+        set -e
+        mc alias set evidence http://minio:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
+        mc cp "evidence/$(params.hud_snapshot_path)" /workspace/source/
+    - name: bundle-evidence
+      image: alpine:3.20
+      script: |
+        #!/bin/sh
+        set -e
+        tar -czf /workspace/source/"$(params.event)-$(params.timestamp).tar.gz" -C /workspace/source . --remove-files
+    - name: upload-bundle
+      image: minio/mc:RELEASE.2024-05-10T01-41-38Z
+      envFrom:
+        - secretRef:
+            name: minio-cred
+      script: |
+        #!/bin/sh
+        set -e
+        mc alias set evidence http://minio:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
+        mc cp /workspace/source/*.tar.gz evidence/evidence/bundles/
+    - name: emit-log
+      image: alpine:3.20
+      script: |
+        #!/bin/sh
+        set -e
+        echo '{
+          "clause": "evidence.bundle",
+          "event": "$(params.event)",
+          "region": "$(params.region)",
+          "severity": "$(params.severity)",
+          "bundle": "$(params.event)-$(params.timestamp).tar.gz",
+          "tenant": "$(params.tenant)"
+        }'
+
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: clause-evidence-bundle-pipeline
+  namespace: jallybean-telemetry
+spec:
+  params:
+    - name: region
+    - name: event
+    - name: severity
+    - name: timestamp
+    - name: tenant
+    - name: hud_snapshot_path
+    - name: log_query
+  tasks:
+    - name: bundle-evidence
+      taskRef:
+        name: clause-evidence-bundle-task
+      params:
+        - name: region
+          value: $(params.region)
+        - name: event
+          value: $(params.event)
+        - name: severity
+          value: $(params.severity)
+        - name: timestamp
+          value: $(params.timestamp)
+        - name: tenant
+          value: $(params.tenant)
+        - name: hud_snapshot_path
+          value: $(params.hud_snapshot_path)
+        - name: log_query
+          value: $(params.log_query)
+    - name: trigger-scoring
+      runAfter: ["bundle-evidence"]
+      taskSpec:
+        params:
+          - name: region
+          - name: tenant
+          - name: event
+          - name: timestamp
+        steps:
+          - name: trigger
+            image: bitnami/kubectl:1.29
+            script: |
+              #!/bin/sh
+              set -e
+              cat <<EOF | kubectl apply -f -
+              apiVersion: tekton.dev/v1
+              kind: PipelineRun
+              metadata:
+                generateName: scoring-pipeline-
+                namespace: jallybean-telemetry
+              spec:
+                pipelineRef:
+                  name: scoring-pipeline
+                params:
+                - name: clause
+                  value: "evidence.bundle"
+                - name: region
+                  value: "$(params.region)"
+                - name: tenant
+                  value: "$(params.tenant)"
+                - name: bundle_id
+                  value: "$(params.event)-$(params.timestamp).tar.gz"
+              EOF
+      params:
+        - name: region
+          value: $(params.region)
+        - name: tenant
+          value: $(params.tenant)
+        - name: event
+          value: $(params.event)
+        - name: timestamp
+          value: $(params.timestamp)
+
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: clause-evidence-bundle-run-
+  namespace: jallybean-telemetry
+spec:
+  pipelineRef:
+    name: clause-evidence-bundle-pipeline
+  params:
+    - name: region
+      value: "us-west-2"
+    - name: event
+      value: "Example Event"
+    - name: severity
+      value: "critical"
+    - name: timestamp
+      value: "20250918T163200Z"
+    - name: tenant
+      value: "observer"
+    - name: hud_snapshot_path
+      value: "evidence/us-west-2/hud-20250918T163200Z.svg"
+    - name: log_query
+      value: '{clause="alert.dispatch", region="us-west-2"}'

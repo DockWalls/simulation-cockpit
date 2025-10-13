@@ -1,0 +1,111 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: scoring-task
+spec:
+  params:
+    - name: clause
+    - name: region
+    - name: tenant
+    - name: bundle_id
+  steps:
+    - name: calculate-scores
+      image: alpine:3.20
+      script: |
+        #!/bin/sh
+        set -e
+        # Placeholder for scoring logic
+        CLAUSE_LATENCY=$(shuf -i 10-100 -n 1)
+        HUD_ACCURACY=$(shuf -i 80-100 -n 1)
+        REPLAY_FIDELITY=$(shuf -i 95-100 -n 1)
+
+        echo '{
+          "clause": "score.emit",
+          "region": "$(params.region)",
+          "tenant": "$(params.tenant)",
+          "bundle_id": "$(params.bundle_id)",
+          "scores": {
+            "clause_latency": $CLAUSE_LATENCY,
+            "hud_accuracy": $HUD_ACCURACY,
+            "replay_fidelity": $REPLAY_FIDELITY
+          }
+        }'
+
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: scoring-pipeline
+  namespace: jallybean-telemetry
+spec:
+  params:
+    - name: clause
+    - name: region
+    - name: tenant
+    - name: bundle_id
+  tasks:
+    - name: calculate-scores
+      taskRef:
+        name: scoring-task
+      params:
+        - name: clause
+          value: $(params.clause)
+        - name: region
+          value: $(params.region)
+        - name: tenant
+          value: $(params.tenant)
+        - name: bundle_id
+          value: $(params.bundle_id)
+    - name: trigger-integrity-validation
+      runAfter: ["calculate-scores"]
+      taskSpec:
+        params:
+          - name: clause
+          - name: bundle_id
+        steps:
+          - name: trigger
+            image: bitnami/kubectl:1.29
+            script: |
+              #!/bin/sh
+              set -e
+              cat <<EOF | kubectl apply -f -
+              apiVersion: tekton.dev/v1
+              kind: PipelineRun
+              metadata:
+                generateName: integrity-validator-pipeline-
+                namespace: jallybean-telemetry
+              spec:
+                pipelineRef:
+                  name: integrity-validator-pipeline
+                params:
+                - name: clause_id
+                  value: "$(params.clause)"
+                - name: bundle_id
+                  value: "$(params.bundle_id)"
+                - name: dispatch_id
+                  value: "N/A"
+              EOF
+      params:
+        - name: clause
+          value: $(params.clause)
+        - name: bundle_id
+          value: $(params.bundle_id)
+
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: scoring-run-
+  namespace: jallybean-telemetry
+spec:
+  pipelineRef:
+    name: scoring-pipeline
+  params:
+    - name: clause
+      value: "news.ingest"
+    - name: region
+      value: "us-west-2"
+    - name: tenant
+      value: "analyst"
+    - name: bundle_id
+      value: "Example-Event-20250918T163200Z.tar.gz"

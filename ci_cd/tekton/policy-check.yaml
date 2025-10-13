@@ -1,0 +1,166 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: clause-policy-check-task
+spec:
+  params:
+    - name: region
+    - name: tenant
+    - name: severity
+    - name: event
+    - name: timestamp
+  steps:
+    - name: policy-check
+      image: bitnami/kubectl:1.29
+      script: |
+        #!/bin/sh
+        set -e
+        apk add --no-cache curl jq
+        curl -sSLf https://github.com/open-policy-agent/conftest/releases/download/v0.45.0/conftest_0.45.0_linux_amd64.tar.gz -o /tmp/conftest.tar.gz
+        tar -zxvf /tmp/conftest.tar.gz -C /usr/local/bin
+        chmod +x /usr/local/bin/conftest
+
+        echo '{
+          "region": "$(params.region)",
+          "tenant": "$(params.tenant)",
+          "severity": "$(params.severity)"
+        }' > /workspace/source/input.json
+
+        if ! conftest test /workspace/source/input.json --policy policy/clauses --output json > /workspace/source/output.json; then
+          echo "Policy violation detected"
+          echo '{
+            "clause": "policy.violation",
+            "region": "$(params.region)",
+            "tenant": "$(params.tenant)",
+            "severity": "$(params.severity)",
+            "violations": $(cat /workspace/source/output.json)
+          }'
+          exit 1
+        else
+          echo "Policy check passed"
+          case $(params.severity) in
+            info)
+              PIPELINE="clause-log-pipeline"
+              ;;
+            warning)
+              PIPELINE="clause-alert-dispatch"
+              ;;
+            critical)
+              # Trigger evidence bundling
+              cat <<EOF | kubectl apply -f -
+              apiVersion: tekton.dev/v1
+              kind: PipelineRun
+              metadata:
+                generateName: clause-evidence-bundle-pipeline-
+                namespace: jallybean-telemetry
+              spec:
+                pipelineRef:
+                  name: clause-evidence-bundle-pipeline
+                params:
+                - name: tenant
+                  value: $(params.tenant)
+                - name: region
+                  value: $(params.region)
+                - name: event
+                  value: $(params.event)
+                - name: severity
+                  value: $(params.severity)
+                - name: timestamp
+                  value: $(params.timestamp)
+              EOF
+
+              # Trigger external dispatch
+              cat <<EOF | kubectl apply -f -
+              apiVersion: tekton.dev/v1
+              kind: PipelineRun
+              metadata:
+                generateName: external-dispatch-pipeline-
+                namespace: jallybean-telemetry
+              spec:
+                pipelineRef:
+                  name: external-dispatch-pipeline
+                params:
+                - name: tenant
+                  value: $(params.tenant)
+                - name: region
+                  value: $(params.region)
+                - name: event
+                  value: $(params.event)
+                - name: severity
+                  value: $(params.severity)
+              EOF
+              ;;
+          esac
+
+          cat <<EOF | kubectl apply -f -
+          apiVersion: tekton.dev/v1
+          kind: PipelineRun
+          metadata:
+            generateName: $PIPELINE-
+            namespace: jallybean-telemetry
+          spec:
+            pipelineRef:
+              name: $PIPELINE
+            params:
+            - name: tenant
+              value: $(params.tenant)
+            - name: region
+              value: $(params.region)
+            - name: event
+              value: $(params.event)
+            - name: severity
+              value: $(params.severity)
+            - name: timestamp
+              value: $(params.timestamp)
+          EOF
+        fi
+
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: clause-policy-check-pipeline
+  namespace: jallybean-telemetry
+spec:
+  params:
+    - name: region
+    - name: tenant
+    - name: severity
+    - name: event
+    - name: timestamp
+  tasks:
+    - name: policy-check
+      taskRef:
+        name: clause-policy-check-task
+      params:
+        - name: region
+          value: $(params.region)
+        - name: tenant
+          value: $(params.tenant)
+        - name: severity
+          value: $(params.severity)
+        - name: event
+          value: $(params.event)
+        - name: timestamp
+          value: $(params.timestamp)
+
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: clause-policy-check-run-
+  namespace: jallybean-telemetry
+spec:
+  pipelineRef:
+    name: clause-policy-check-pipeline
+  params:
+    - name: region
+      value: "us-east-1"
+    - name: tenant
+      value: "commander"
+    - name: severity
+      value: "critical"
+    - name: event
+      value: "Test Event"
+    - name: timestamp
+      value: "20250918T120000Z"

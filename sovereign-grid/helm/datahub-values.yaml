@@ -1,0 +1,36 @@
+global:
+  neo4j:
+    host: your-neo4j-host
+    username: neo4j
+    password:
+      secretKey: neo4j-password
+      secretRef: neo4j-secrets
+
+  elasticsearch:
+    host: datahub-elasticsearch
+    username: elastic
+    password:
+      secretKey: elastic-password
+      secretRef: elastic-secrets
+
+  kafka:
+    bootstrapServers: your-kafka-bootstrap:9092
+
+datahub:
+  systemUpdate:
+    enabled: true
+
+  secrets:
+    useExternalSecrets: true
+
+neo4j:
+  enabled: false
+
+elasticsearch:
+  enabled: true
+
+kafka:
+  enabled: false
+
+mysql:
+  enabled: true

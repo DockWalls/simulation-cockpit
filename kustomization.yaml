@@ -1,0 +1,4 @@
+resources:
+  - marquez-k8s.yaml
+
+namespace: metadata-grid

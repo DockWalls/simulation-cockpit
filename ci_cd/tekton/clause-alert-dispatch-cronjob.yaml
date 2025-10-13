@@ -1,0 +1,54 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: clause-alert-trigger
+  namespace: jallybean-telemetry
+spec:
+  schedule: "*/30 * * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: tekton-robot
+          restartPolicy: OnFailure
+          containers:
+            - name: clause-alert-trigger
+              image: bitnami/kubectl:1.29
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  apk add --no-cache curl jq
+                  curl -sSLf https://github.com/grafana/loki/releases/download/v2.9.8/logcli-linux-amd64.zip -o /tmp/logcli.zip
+                  unzip /tmp/logcli.zip -d /usr/local/bin
+                  chmod +x /usr/local/bin/logcli
+
+                  logcli --addr=http://loki:3100 query --output=json '{clause="news.ingest"}' | jq -c '.[]' | while read -r log; do
+                    SEVERITY=$(echo "$log" | jq -r '.labels.severity')
+                    EVENT=$(echo "$log" | jq -r '.line')
+                    REGION=$(echo "$log" | jq -r '.labels.region')
+                    TIMESTAMP=$(echo "$log" | jq -r '.timestamp')
+                    TENANT=$(echo "$log" | jq -r '.labels.tenant')
+
+                    cat <<EOF | kubectl apply -f -
+                    apiVersion: tekton.dev/v1
+                    kind: PipelineRun
+                    metadata:
+                      generateName: clause-policy-check-pipeline-
+                      namespace: jallybean-telemetry
+                    spec:
+                      pipelineRef:
+                        name: clause-policy-check-pipeline
+                      params:
+                      - name: tenant
+                        value: $TENANT
+                      - name: region
+                        value: $REGION
+                      - name: event
+                        value: $EVENT
+                      - name: severity
+                        value: $SEVERITY
+                      - name: timestamp
+                        value: $TIMESTAMP
+                    EOF
+                  done
+

@@ -1,0 +1,7 @@
+requests
+pydantic
+protobuf
+firebase-admin
+google-cloud-firestore
+google-cloud-storage
+logging

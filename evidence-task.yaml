@@ -1,0 +1,37 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: evidence-bundle
+spec:
+  params:
+    - name: range
+      default: 30m
+    - name: labelSelector
+      default: '{namespace="jallybean-telemetry"}'
+    - name: bucket
+      default: evidence
+  workspaces:
+    - name: out
+  steps:
+    - name: fetch-logs
+      image: grafana/logcli:2.9.8
+      script: |
+        set -eu
+        logcli --addr=http://loki:3100 query --no-labels --timezone=UTC \
+          --since $(params.range) $(params.labelSelector) > /workspace/out/logs.txt
+    - name: bundle
+      image: alpine:3.20
+      script: |
+        set -eu
+        TS=$(date -u +%Y%m%dT%H%M%SZ)
+        echo "$TS" > /workspace/out/ts.txt
+        tar -czf /workspace/out/evidence-$TS.tgz -C /workspace/out logs.txt ts.txt
+    - name: upload
+      image: minio/mc:RELEASE.2024-05-10T01-41-38Z
+      envFrom:
+        - secretRef:
+            name: minio-cred
+      script: |
+        set -eu
+        mc alias set evidence http://minio:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
+        mc cp /workspace/out/*.tgz evidence/$(params.bucket)/

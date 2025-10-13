@@ -1,0 +1,46 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: evidence-pack-v2
+spec:
+  params:
+    - name: range
+      default: 30m
+    - name: labelSelector
+      default: '{namespace="jallybean-telemetry"}'
+    - name: bucket
+      default: evidence
+  workspaces:
+    - name: shared
+  tasks:
+    - name: bundle
+      taskRef:
+        name: evidence-bundle
+      params:
+        - name: range
+          value: $(params.range)
+        - name: labelSelector
+          value: $(params.labelSelector)
+        - name: bucket
+          value: $(params.bucket)
+      workspaces:
+        - name: out
+          workspace: shared
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: evidence-pack-v2-run-
+spec:
+  pipelineRef:
+    name: evidence-pack-v2
+  params:
+    - name: range
+      value: 30m
+    - name: labelSelector
+      value: '{namespace="jallybean-telemetry"}'
+    - name: bucket
+      value: evidence
+  workspaces:
+    - name: shared
+      emptyDir: {}

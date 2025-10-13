@@ -1,0 +1,32 @@
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: pod-delete-chaos
+  namespace: default
+  annotations:
+    litmuschaos.io/chaos-exporter-image: "litmuschaos/chaos-exporter:1.9.0"
+    litmuschaos.io/chaos-exporter-image-pull-policy: "IfNotPresent"
+    litmuschaos.io/chaos-runner-image: "litmuschaos/chaos-runner:1.9.0"
+    litmuschaos.io/chaos-runner-image-pull-policy: "IfNotPresent"
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '8080'
+spec:
+  engineState: 'active'
+  appinfo:
+    appns: 'default'
+    applabel: 'app=my-app'
+    appkind: 'deployment'
+  chaosServiceAccount: litmus-admin
+  experiments:
+  - name: pod-delete
+    spec:
+      components:
+        env:
+        - name: TOTAL_CHAOS_DURATION
+          value: '30'
+        - name: CHAOS_INTERVAL
+          value: '10'
+        - name: FORCE
+          value: 'false'
+        - name: PODS_AFFECTED_PERC
+          value: '100'

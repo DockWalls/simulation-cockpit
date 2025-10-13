@@ -1,0 +1,130 @@
+version: '3.3'
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.37.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./telemetry/prometheus:/etc/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    networks:
+      - jallybean_net
+
+  grafana:
+    image: grafana/grafana-oss:8.5.2
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./telemetry/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - jallybean_net
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg14
+    container_name: timescaledb
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=marquez
+      - POSTGRES_USER=marquez
+      - POSTGRES_PASSWORD=marquez
+    networks:
+      - jallybean_net
+    networks:
+      - jallybean_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U marquez"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  marquez:
+    image: marquezproject/marquez:0.27.0
+    container_name: marquez
+    ports:
+      - "5001:5000"
+    environment:
+      - MARQUEZ_CONFIG=/app/marquez.yml
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/api/v1/namespaces"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ./data_lineage/marquez.yml:/app/marquez.yml
+    depends_on:
+      - timescaledb
+    networks:
+      - jallybean_net
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:18.0.0
+    container_name: keycloak
+    ports:
+      - "8082:8080"
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    command: start-dev
+    networks:
+      - jallybean_net
+
+  vault:
+    image: vault:1.10.3
+    container_name: vault
+    ports:
+      - "8200:8200"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=root
+      - VAULT_ADDR=http://127.0.0.1:8200
+    cap_add:
+      - IPC_LOCK
+
+networks:
+  jallybean_net:
+    external: true
+    networks:
+      - jallybean_net
+
+  datahub-gms:
+    image: linkedin/datahub-gms:v0.8.45
+    container_name: datahub-gms
+    ports:
+      - "8081:8080"
+    environment:
+      - DATAHUB_GMS_HOST=datahub-gms
+      - DATAHUB_GMS_PORT=8080
+      - DATAHUB_MAE_HOST=datahub-mae-consumer
+      - DATAHUB_MAE_PORT=9091
+    networks:
+      - jallybean_net
+
+  datahub-mae-consumer:
+    image: linkedin/datahub-mae-consumer:v0.8.45
+    container_name: datahub-mae-consumer
+    ports:
+      - "9091:9091"
+    environment:
+      - DATAHUB_GMS_HOST=datahub-gms
+      - DATAHUB_GMS_PORT=8080
+    networks:
+      - jallybean_net
+
+  datahub-frontend:
+    image: linkedin/datahub-frontend-react:v0.8.45
+    container_name: datahub-frontend
+    ports:
+      - "9002:9002"
+    environment:
+      - DATAHUB_GMS_HOST=datahub-gms
+      - DATAHUB_GMS_PORT=8080
+    networks:
+      - jallybean_net
+
+networks:
+  jallybean_net:
+    external: true

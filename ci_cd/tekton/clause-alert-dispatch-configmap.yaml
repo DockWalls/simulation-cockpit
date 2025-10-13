@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clause-alert-dispatch-template
+  namespace: jallybean-telemetry
+data:
+  clause-alert-dispatch.yaml: |
+    apiVersion: tekton.dev/v1
+    kind: PipelineRun
+    metadata:
+      generateName: clause-alert-dispatch-
+      namespace: jallybean-telemetry
+    spec:
+      pipelineRef:
+        name: clause-alert-dispatch
+      params:
+        - name: clause
+          value: alert.dispatch
+        - name: region
+          value: "us-west-2"
+        - name: event
+          value: "Example Event"
+        - name: severity
+          value: "critical"
+        - name: tenant
+          value: "observer"

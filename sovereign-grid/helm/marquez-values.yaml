@@ -1,0 +1,6 @@
+marquez:
+  db:
+    password: $VAULT_MARQUEZ_DB_PASSWORD
+    user: marquez
+    name: marquez
+    host: datahub-postgresql

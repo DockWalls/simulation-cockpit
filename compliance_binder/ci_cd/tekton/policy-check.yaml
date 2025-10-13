@@ -1,0 +1,25 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: policy-check-pipeline
+spec:
+  tasks:
+    - name: run-policy-check
+      taskSpec:
+        steps:
+          - name: policy-check
+            image: openpolicyagent/conftest:v0.28.3
+            script: |
+              #!/bin/sh
+              set -e
+              echo "Running policy check..."
+              conftest test tfplan.json --policy policy --output json > rulebook_output.json
+              echo "Policy check complete."
+              cat rulebook_output.json
+              # Check if there are any failures
+              if [ "$(jq '. | length')" -gt 0 ]; then
+                echo "Policy check failed. Blocking merge."
+                exit 1
+              else
+                echo "Policy check passed."
+              fi

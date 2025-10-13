@@ -1,0 +1,79 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: external-dispatch-task
+spec:
+  params:
+    - name: tenant
+    - name: region
+    - name: severity
+    - name: event
+  steps:
+    - name: dispatch
+      image: curlimages/curl:8.4.0
+      script: |
+        #!/bin/sh
+        set -e
+        TARGET_SYSTEM=""
+        if [ "$(params.tenant)" = "commander" ] && [ "$(params.severity)" = "critical" ]; then
+          TARGET_SYSTEM="http://critical-alert-system.example.com"
+        else
+          TARGET_SYSTEM="http://default-notification-system.example.com"
+        fi
+
+        curl -X POST -d '{
+          "region": "$(params.region)",
+          "event": "$(params.event)",
+          "severity": "$(params.severity)"
+        }' "$TARGET_SYSTEM"
+
+        echo '{
+          "clause": "external.dispatch",
+          "target_system": "$TARGET_SYSTEM",
+          "status": "success"
+        }'
+
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: external-dispatch-pipeline
+  namespace: jallybean-telemetry
+spec:
+  params:
+    - name: tenant
+    - name: region
+    - name: severity
+    - name: event
+  tasks:
+    - name: dispatch
+      taskRef:
+        name: external-dispatch-task
+      params:
+        - name: tenant
+          value: $(params.tenant)
+        - name: region
+          value: $(params.region)
+        - name: severity
+          value: $(params.severity)
+        - name: event
+          value: $(params.event)
+
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: external-dispatch-run-
+  namespace: jallybean-telemetry
+spec:
+  pipelineRef:
+    name: external-dispatch-pipeline
+  params:
+    - name: tenant
+      value: "commander"
+    - name: region
+      value: "us-west-2"
+    - name: severity
+      value: "critical"
+    - name: event
+      value: "Test Event"

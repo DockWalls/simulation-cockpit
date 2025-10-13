@@ -1,0 +1,54 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: clause-log-task
+spec:
+  params:
+    - name: region
+    - name: event
+    - name: severity
+    - name: tenant
+    - name: timestamp
+  steps:
+    - name: log-event
+      image: alpine:3.20
+      script: |
+        #!/bin/sh
+        set -e
+        echo '{
+          "clause": "news.ingest",
+          "region": "$(params.region)",
+          "event": "$(params.event)",
+          "severity": "$(params.severity)",
+          "tenant": "$(params.tenant)",
+          "timestamp": "$(params.timestamp)"
+        }'
+
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: clause-log-pipeline
+  namespace: jallybean-telemetry
+spec:
+  params:
+    - name: region
+    - name: event
+    - name: severity
+    - name: tenant
+    - name: timestamp
+  tasks:
+    - name: log-event
+      taskRef:
+        name: clause-log-task
+      params:
+        - name: region
+          value: $(params.region)
+        - name: event
+          value: $(params.event)
+        - name: severity
+          value: $(params.severity)
+        - name: tenant
+          value: $(params.tenant)
+        - name: timestamp
+          value: $(params.timestamp)

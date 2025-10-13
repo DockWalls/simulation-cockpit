@@ -1,0 +1,17 @@
+config:
+  clients:
+    - url: http://loki-gateway.jallybean-telemetry.svc.cluster.local/loki/api/v1/push
+      tenant_id: foo
+  snippets:
+    pipelineStages: []   # keep simple for now
+  positions:
+    filename: /run/promtail/positions.yaml
+pod:
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: 3101
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 6

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: loki-query-3
+  namespace: jallybean-telemetry
+spec:
+  containers:
+  - name: loki-query-3
+    image: curlimages/curl:8.7.1
+    command: ["sleep", "3600"]
+  nodeSelector:
+    kubernetes.io/hostname: gke-my-cluster-default-pool-bc2aa6e4-48c5

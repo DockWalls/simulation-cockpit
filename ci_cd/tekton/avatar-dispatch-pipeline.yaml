@@ -1,0 +1,103 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: avatar-dispatch-task
+spec:
+  params:
+    - name: avatar
+    - name: action
+    - name: region
+    - name: trigger
+    - name: tenant
+  steps:
+    - name: dispatch-avatar
+      image: alpine:3.20
+      script: |
+        #!/bin/sh
+        set -e
+        echo "Dispatching avatar $(params.avatar) in region $(params.region) with action $(params.action) for tenant $(params.tenant) triggered by $(params.trigger)"
+    - name: render-avatar-hud
+      image: hud-renderer:latest
+      command: ["python", "hud_renderer.py", "avatar"]
+      args:
+        - "--avatar"
+        - "$(params.avatar)"
+        - "--action"
+        - "$(params.action)"
+        - "--region"
+        - "$(params.region)"
+        - "--output-path"
+        - "/workspace/source/avatar-$(params.avatar)-$(params.region).svg"
+      workingDir: /app
+    - name: upload-avatar-hud
+      image: minio/mc:RELEASE.2024-05-10T01-41-38Z
+      envFrom:
+        - secretRef:
+            name: minio-cred
+      script: |
+        #!/bin/sh
+        set -e
+        mc alias set evidence http://minio:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
+        mc cp /workspace/source/*.svg evidence/evidence/hud/avatars/
+    - name: emit-log
+      image: alpine:3.20
+      script: |
+        #!/bin/sh
+        set -e
+        echo '{
+          "clause": "avatar.hud.render",
+          "avatar": "$(params.avatar)",
+          "region": "$(params.region)",
+          "tenant": "$(params.tenant)",
+          "image": "avatar-$(params.avatar)-$(params.region).svg"
+        }'
+
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: avatar-dispatch-pipeline
+  namespace: jallybean-telemetry
+spec:
+  params:
+    - name: avatar
+    - name: action
+    - name: region
+    - name: trigger
+    - name: tenant
+  tasks:
+    - name: dispatch-avatar
+      taskRef:
+        name: avatar-dispatch-task
+      params:
+        - name: avatar
+          value: $(params.avatar)
+        - name: action
+          value: $(params.action)
+        - name: region
+          value: $(params.region)
+        - name: trigger
+          value: $(params.trigger)
+        - name: tenant
+          value: $(params.tenant)
+
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: avatar-dispatch-run-
+  namespace: jallybean-telemetry
+spec:
+  pipelineRef:
+    name: avatar-dispatch-pipeline
+  params:
+    - name: avatar
+      value: "sentinel"
+    - name: action
+      value: "respond"
+    - name: region
+      value: "us-west-2"
+    - name: trigger
+      value: "critical event"
+    - name: tenant
+      value: "commander"

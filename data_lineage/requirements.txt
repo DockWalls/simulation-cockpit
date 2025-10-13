@@ -1,0 +1,8 @@
+requests
+openlineage-python
+acryl-datahub
+python-dotenv
+loguru
+jsonschema
+click
+pytz

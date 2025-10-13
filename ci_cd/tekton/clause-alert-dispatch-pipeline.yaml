@@ -1,0 +1,110 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: clause-alert-dispatch-task
+spec:
+  params:
+    - name: region
+      description: The region where the event occurred.
+    - name: event
+      description: The event details.
+    - name: severity
+      description: The severity of the event.
+    - name: tenant
+      description: The tenant associated with the event.
+    - name: timestamp
+      description: The timestamp of the event.
+  steps:
+    - name: render-hud-snapshot
+      image: hud-renderer:latest
+      command: ["python", "hud_renderer.py"]
+      args:
+        - "--region"
+        - "$(params.region)"
+        - "--event"
+        - "$(params.event)"
+        - "--severity"
+        - "$(params.severity)"
+        - "--timestamp"
+        - "$(params.timestamp)"
+        - "--output-path"
+        - "/workspace/source/hud-$(params.timestamp).svg"
+      workingDir: /app
+    - name: upload-hud-snapshot
+      image: minio/mc:RELEASE.2024-05-10T01-41-38Z
+      envFrom:
+        - secretRef:
+            name: minio-cred
+      script: |
+        #!/bin/sh
+        set -e
+        mc alias set evidence http://minio:9000 "$MINIO_ACCESS_KEY" "$MINIO_SECRET_KEY"
+        mc cp /workspace/source/hud-*.svg evidence/evidence/$(params.region)/
+    - name: emit-log
+      image: alpine:3.20
+      script: |
+        #!/bin/sh
+        set -e
+        echo '{
+          "clause": "hud.render",
+          "region": "$(params.region)",
+          "event": "$(params.event)",
+          "severity": "$(params.severity)",
+          "tenant": "$(params.tenant)",
+          "image": "hud-$(params.timestamp).svg"
+        }'
+
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: clause-alert-dispatch
+  namespace: jallybean-telemetry
+spec:
+  params:
+    - name: clause
+      value: alert.dispatch
+    - name: region
+    - name: event
+    - name: severity
+    - name: tenant
+      value: observer
+    - name: timestamp
+  tasks:
+    - name: dispatch-alert
+      taskRef:
+        name: clause-alert-dispatch-task
+      params:
+        - name: region
+          value: $(params.region)
+        - name: event
+          value: $(params.event)
+        - name: severity
+          value: $(params.severity)
+        - name: tenant
+          value: $(params.tenant)
+        - name: timestamp
+          value: $(params.timestamp)
+
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: clause-alert-dispatch-
+  namespace: jallybean-telemetry
+spec:
+  pipelineRef:
+    name: clause-alert-dispatch
+  params:
+    - name: clause
+      value: alert.dispatch
+    - name: region
+      value: "us-west-2"
+    - name: event
+      value: "Example Event"
+    - name: severity
+      value: "critical"
+    - name: tenant
+      value: "observer"
+    - name: timestamp
+      value: "20250918T163200Z"

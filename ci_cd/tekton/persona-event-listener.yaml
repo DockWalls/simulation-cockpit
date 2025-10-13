@@ -1,0 +1,65 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: persona-dispatch-template
+  namespace: jallybean-telemetry
+spec:
+  params:
+  - name: persona
+  - name: clause
+  - name: region
+  - name: event
+  - name: severity
+  resourcetemplates:
+  - apiVersion: tekton.dev/v1
+    kind: PipelineRun
+    metadata:
+      generateName: persona-dispatch-run-
+    spec:
+      pipelineRef:
+        name: clause-alert-dispatch
+      params:
+      - name: persona
+        value: $(tt.params.persona)
+      - name: clause
+        value: $(tt.params.clause)
+      - name: region
+        value: $(tt.params.region)
+      - name: event
+        value: $(tt.params.event)
+      - name: severity
+        value: $(tt.params.severity)
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: persona-dispatch-binding
+  namespace: jallybean-telemetry
+spec:
+  params:
+  - name: persona
+    value: $(body.persona)
+  - name: clause
+    value: $(body.clause)
+  - name: region
+    value: $(body.region)
+  - name: event
+    value: $(body.event)
+  - name: severity
+    value: $(body.severity)
+
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: persona-dispatch-listener
+  namespace: jallybean-telemetry
+spec:
+  serviceAccountName: tekton-robot
+  triggers:
+  - name: persona-dispatch-trigger
+    bindings:
+    - ref: persona-dispatch-binding
+    template:
+      ref: persona-dispatch-template

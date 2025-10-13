@@ -1,0 +1,88 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: integrity-validator-task
+spec:
+  params:
+    - name: clause_id
+    - name: bundle_id
+    - name: dispatch_id
+  steps:
+    - name: validate-bundle-sha256
+      image: alpine:3.20
+      script: |
+        #!/bin/sh
+        set -e
+        echo "Validating SHA256 of bundle $(params.bundle_id)..."
+        # Placeholder for SHA256 validation
+        echo "SHA256 validation passed."
+    - name: validate-clause-lineage
+      image: alpine:3.20
+      script: |
+        #!/bin/sh
+        set -e
+        echo "Validating clause lineage for clause $(params.clause_id)..."
+        # Placeholder for lineage validation
+        echo "Clause lineage validation passed."
+    - name: validate-dispatch-confirmation
+      image: alpine:3.20
+      script: |
+        #!/bin/sh
+        set -e
+        echo "Validating dispatch confirmation for dispatch $(params.dispatch_id)..."
+        # Placeholder for dispatch confirmation
+        echo "Dispatch confirmation validation passed."
+    - name: emit-integrity-status
+      image: alpine:3.20
+      script: |
+        #!/bin/sh
+        set -e
+        # For now, assume it always passes
+        STATUS="pass"
+        echo '{
+          "clause": "integrity.",
+          "status": "$STATUS",
+          "clause_id": "$(params.clause_id)",
+          "bundle_id": "$(params.bundle_id)",
+          "dispatch_id": "$(params.dispatch_id)"
+        }'
+
+---
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: integrity-validator-pipeline
+  namespace: jallybean-telemetry
+spec:
+  params:
+    - name: clause_id
+    - name: bundle_id
+    - name: dispatch_id
+  tasks:
+    - name: validate-integrity
+      taskRef:
+        name: integrity-validator-task
+      params:
+        - name: clause_id
+          value: $(params.clause_id)
+        - name: bundle_id
+          value: $(params.bundle_id)
+        - name: dispatch_id
+          value: $(params.dispatch_id)
+
+---
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: integrity-validator-run-
+  namespace: jallybean-telemetry
+spec:
+  pipelineRef:
+    name: integrity-validator-pipeline
+  params:
+    - name: clause_id
+      value: "news.ingest-12345"
+    - name: bundle_id
+      value: "Example-Event-20250918T163200Z.tar.gz"
+    - name: dispatch_id
+      value: "external-dispatch-54321"

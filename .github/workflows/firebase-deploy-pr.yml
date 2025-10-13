@@ -1,0 +1,45 @@
+name: Firebase Deploy (PR)
+
+on:
+  pull_request:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Lint
+        run: npm run lint
+
+      - name: Run Tests with Coverage
+        run: npm test
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Set up service account credentials
+        run: |
+          echo "${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}" > $HOME/gcloud.json
+          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/gcloud.json"
+
+      - name: Deploy to PR Channel
+        if: success()
+        run: firebase hosting:channel:deploy pr-${{ github.event.number }} --expires 1d --project simulation-cockpit
+
+      - name: Comment preview URL on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          message: |
+            Preview deployed to:
+            https://simulation-cockpit--pr-${{ github.event.pull_request.number }}.web.app
