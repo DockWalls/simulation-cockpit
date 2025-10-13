@@ -38,19 +38,19 @@ jobs:
 
     - name: Trigger Cloud Run animation endpoint
       run: |
-        curl -X POST https://jverse-backend-372419426577.us-central1.run.app/trigger-animation \
-          -H "Authorization: Bearer ${{ secrets.CLOUD_RUN_TOKEN }}" \
-          -H "Content-Type: application/json" \
-          -d '{"event":"avatar_animation","source":"ci_cd","context":"greeting","ethics":"nonviolent"}'
+        curl -X POST https://jverse-backend-372419426577.us-central1.run.app/trigger-animation -H "Authorization: Bearer $(gcloud auth print-access-token)" -H "Content-Type: application/json" -d '{"event":"avatar_animation","source":"ci_cd","context":"greeting","ethics":"nonviolent"}'
 
     - name: Log deployment to Jallybean Rulebook
       run: |
         echo "$(date) - Avatar animation deployed via CI/CD" >> rulebook.log
 
+    - name: Decode GCP key
+      run: |
+        echo "${{ secrets.GCP_SA_KEY_B64 }}" | base64 --decode > gcp_sa_key.json
     - name: Authenticate to Google Cloud
-      uses: google-github-actions/auth@v1
-      with:
-        credentials_json: '${{ secrets.GCP_SA_KEY }}'
+      run: |
+        gcloud auth activate-service-account firebase-hosting-deployer@simulation-cockpit.iam.gserviceaccount.com           --key-file=gcp_sa_key.json
+        gcloud config set project simulation-cockpit
 
     - name: Archive Telemetry Snapshots
       run: |
