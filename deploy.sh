@@ -13,7 +13,7 @@ DATE=$(date +%Y%m%d)
 # STEP 1: Authenticate to Google Cloud
 # ─────────────────────────────────────────────────────────────
 echo "Authenticating to Google Cloud..."
-gcloud auth activate-service-account "$SERVICE_ACCOUNT" --key-file="./gcp_sa_key.json"
+gcloud auth activate-service-account "$SERVICE_ACCOUNT" --key-file="$GCP_KEY_PATH"
 gcloud config set project "$PROJECT_ID"
 
 # ─────────────────────────────────────────────────────────────
@@ -29,8 +29,8 @@ python JVerse/validators/validator.py --mode=batch --check=animation --exit-on-f
 # STEP 3: Deploy Avatars and HUD Overlays to Firebase Hosting
 # ─────────────────────────────────────────────────────────────
 echo "Deploying avatars and HUD overlays..."
-firebase deploy --only hosting
-firebase deploy --only hosting:jversehud
+firebase deploy --only hosting:jverse -P simulation-cockpit
+firebase deploy --only hosting:jversehud -P simulation-cockpit
 
 # ─────────────────────────────────────────────────────────────
 # STEP 4: Trigger Cloud Run Animation Endpoint

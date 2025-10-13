@@ -5,6 +5,9 @@
   "targets": {
     "simulation-cockpit": {
       "hosting": {
+        "jverse": [
+          "simulation-cockpit"
+        ],
         "jversehud": [
           "jversehud"
         ]

@@ -1,6 +1,7 @@
 {
   "hosting": [
     {
+      "target": "jverse",
       "public": "dist",
       "ignore": [
         "firebase.json",
